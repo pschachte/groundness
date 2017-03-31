@@ -1,0 +1,44 @@
+% CVS: $Id: chemreac.risc,v 1.3 1998/10/19 06:35:07 pets Exp $
+goal :- go1(X).
+
+system([], _L, []).
+system([Ar|T],L,[Rate|Tail]) :-
+    rate(Ar,L,Rate),
+    system(T,L,Tail).
+
+rate(_Ar,[],0).
+rate(Ar,[[[R,_P],[R1|Rt],K]|L],Rate) :-
+    K > 0, R1 >= 0,
+    Rate = -K*R1*Rest+Tr,
+    member(Ar,R),
+    product(Rt,Rest),
+    rate(Ar,L,Tr).
+rate(Ar,[[[_R,P],[R1|Rt],K]|L],Rate) :-
+    K > 0, P1 >= 0,                     %% was P1 >= 0,
+    Rate = -K*R1*Rest+Tr,
+    member(Ar,P),
+    product(Rt,Rest),
+    rate(Ar,L,Tr).
+rate(Ar,[[_L1,_Rs,_K]|L],Rate) :-
+    rate(Ar,L,Rate).
+
+product([],1).
+product([H|T],H*Pt) :-
+    product(T,Pt).
+
+member(E,[E|_T]).
+member(E,[_H|T]) :-
+    member(E,T).
+
+/*
+go1(H) :-
+   H2O = 55.5, K1* 55.5e-14 =K2, H=OH,
+   system([h2o, h, oh], [[[[h2o],[h,oh]],[H2O],K1],
+                         [[[h,oh],[h2o]],[H,OH],K2]],
+          [0,0,0]),dump([H]).
+*/
+
+go1(H) :-
+   system([h2o, h, oh], [[[[h2o],[h,oh]],[H2O],K1],
+                         [[[h,oh],[h2o]],[H,OH],K2]],
+          [0,0,0]).

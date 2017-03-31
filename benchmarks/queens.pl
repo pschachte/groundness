@@ -1,0 +1,31 @@
+% CVS: $Id: queens.pl,v 1.3 1998/10/20 03:23:46 pets Exp $
+goal :- queens(X,Y).
+
+queens(X,Y) :-
+   perm(X,Y),
+   safe(Y).
+
+perm([],[]).
+perm([X|Y],[V|Res]) :-
+  delete(V,[X|Y],Rest),
+  perm(Rest,Res).
+
+delete(X,[X|Y],Y).
+delete(X,[F|T],[F|R]) :-
+  delete(X,T,R).
+
+safe([]).
+safe([X|Y]) :-
+  noattack(X,Y,1),
+  safe(Y).
+
+noattack(X,[],N).
+noattack(X,[F|T],N) :-
+   X =\= F,
+   X =\= F + N,
+   F =\= X + N,
+   N1 is N + 1,
+   noattack(X,T,N1).
+
+
+

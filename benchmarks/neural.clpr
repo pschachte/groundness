@@ -1,0 +1,342 @@
+% CVS: $Id: neural.clpr,v 1.3 1998/10/19 06:35:20 pets Exp $
+goal :- go.
+
+/*(:-dynamic(test,2)).*/
+
+propogate_values(I, O, Net1, NewO) :-
+        Net1=net(W,V,B),
+        List1=[O],
+        List2=[OW],
+        mat_mult(List1, W, List2),
+        List3=[I],
+        List4=[IV],
+        mat_mult(List3, V, List4),
+        vec_sum(OW, IV, Temp),
+        vec_sum(Temp, B, NewO).
+apply_cutoff(Nil1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+apply_cutoff(List1, List2) :-
+        List1=[O|Os],
+        List2=[NewO|NewOs],
+        cutoff(O, NewO),
+        apply_cutoff(Os, NewOs).
+cutoff(A, Op1) :-
+        Op1=1,
+        A>=1.
+cutoff(A, Op1) :-
+        Op1=0,
+        -1 >= A.
+cutoff(A, Op1) :-
+        Op1=0.5*A+0.5,
+        A >= -1,
+        1 >= A.
+cycle_net(I, O, Net, NewO) :-
+        propogate_values(I, O, Net, Temp),
+        apply_cutoff(Temp, NewO).
+run_net(Op1, I, O, Net, O1) :-
+        Op1=0,
+        O1=O.
+run_net(NumCycles, I, O, Net, NewO) :-
+        NumCycles>=1,
+        cycle_net(I, O, Net, TempO),
+        Op1=NumCycles-1,
+        run_net(Op1, I, TempO, Net, NewO).
+interactive_net(Net, Cycles) :-
+        write('Enter Input list (or quit)'),
+        nl,
+        read(I),
+        write('Enter initial neuron state (or quit)'),
+        nl,
+        read(O),
+        List1=[I,O],
+        loop(List1, Net, Cycles).
+loop(List1, Net, Cycles) :-
+        List1=[quit,_1].
+loop(List1, Net, Cycles) :-
+        List1=[I,O],
+        run_net(Cycles, I, O, Net, NewO),
+        write('Output is '),
+        write(NewO),
+        nl,
+        nl,
+        interactive_net(Net, Cycles).
+makenet(NumI, NumO, Net1) :-
+        Net1=net(W,V,B),
+        NumO1=NumO,
+        make_array(NumO, NumO1, W),
+        make_array(NumI, NumO, V),
+        make_vector(NumO, B).
+make_vector(Op1, Nil1) :-
+        Op1=0,
+        Nil1=[].
+make_vector(N, List1) :-
+        List1=[_1|Vs],
+        N>=1,
+        Op1=N-1,
+        make_vector(Op1, Vs).
+make_array(Op1, _M, Nil1) :-
+        Op1=0,
+        Nil1=[].
+make_array(N, M, List1) :-
+        List1=[V|Vs],
+        N>=1,
+        make_vector(M, V),
+        Op1=N-1,
+        make_array(Op1, M, Vs).
+near_equilibrium(I, O, Net, Error) :-
+        propogate_values(I, O, Net, NewO),
+        will_be_close(O, NewO, Error).
+will_be_close(Nil1, Nil2, _1) :-
+        Nil1=[],
+        Nil2=[].
+will_be_close(List1, List2, Error) :-
+        List1=[1|As],
+        List2=[B|Bs],
+        B>=Error,
+        will_be_close(As, Bs, Error).
+will_be_close(List1, List2, Error) :-
+        List1=[0|As],
+        List2=[B|Bs],
+        0-Error >= B,
+        will_be_close(As, Bs, Error).
+learn(Nil1, _Net, _Error) :-
+        Nil1=[].
+learn(List1, Net, Error) :-
+        List1=[[I,O]|IOs],
+        near_equilibrium(I, O, Net, Error),
+        learn(IOs, Net, Error).
+mat_mult(A, B, C) :-
+        transpose(B, TB),
+        mat_mult2(A, TB, C).
+transpose(Nil1, Empty1) :-
+        Nil1=[],
+        Empty1=empty.
+transpose(List1, T) :-
+        List1=[V|Vs],
+        transpose(Vs, Ws),
+        add_column(V, Ws, T).
+add_column(Nil1, Empty1, Nil2) :-
+        Nil1=[],
+        Empty1=empty,
+        Nil2=[].
+add_column(List1, Empty1, List2) :-
+        List1=[A|As],
+        Empty1=empty,
+        List2=[[A]|Bs],
+        Empty2=empty,
+        add_column(As, Empty2, Bs).
+add_column(Nil1, Nil2, Nil3) :-
+        Nil1=[],
+        Nil2=[],
+        Nil3=[].
+add_column(List1, List2, List3) :-
+        List1=[A|As],
+        List2=[V|Vs],
+        List3=[[A|V]|AVs],
+        add_column(As, Vs, AVs).
+mat_mult2(Nil1, B, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+mat_mult2(List1, B, List2) :-
+        List1=[V|Vs],
+        List2=[VB|VsB],
+        make_row(V, B, VB),
+        mat_mult2(Vs, B, VsB).
+make_row(_1, Nil1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+make_row(V, List1, List2) :-
+        List1=[W|Ws],
+        List2=[VW|VWs],
+        dot_prod(V, W, VW),
+        make_row(V, Ws, VWs).
+dot_prod(Nil1, Nil2, Op1) :-
+        Nil1=[],
+        Nil2=[],
+        Op1=0.
+dot_prod(List1, List2, Op2) :-
+        List1=[A|As],
+        List2=[B|Bs],
+        Op1=A*B,
+        Op2=Op1+DP,
+        dot_prod(As, Bs, DP).
+vec_sum(Nil1, Nil2, Nil3) :-
+        Nil1=[],
+        Nil2=[],
+        Nil3=[].
+vec_sum(List1, List2, List3) :-
+        List1=[A|As],
+        List2=[B|Bs],
+        List3=[A+B|Cs],
+        vec_sum(As, Bs, Cs).
+scalar_mult(Scalar, Nil1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+scalar_mult(Scalar, List1, List2) :-
+        List1=[A|As],
+        List2=[A*Scalar|Bs],
+        scalar_mult(Scalar, As, Bs).
+example_net_1(Net1) :-
+        Net1=net([[0,0],[-16,0]],[[12,16]],[-10,-24]).
+example_net_2(Net1) :-
+        Net1=net([[0,0],[-16,0]],[[12,16],[12,16],[12,16]],[-10,-24]).
+trials(A_to_d_21, Op1, Op2, List1) :-
+        A_to_d_21=a_to_d_2,
+        Op1=1,
+        Op2=2,
+        List1=[[[0],[0,0]],[[1],[1,0]],[[2],[0,1]],[[3],[1,1]]].
+trials(Bin_add1, Op1, Op2, List1) :-
+        Bin_add1=bin_add,
+        Op1=3,
+        Op2=2,
+        List1=[[[0,0,0],[0,0]],[[0,1,0],[1,0]],[[1,0,0],[1,0]],[[1,1,0],[0,1]],[[0,0,1],[1,0]],[[0,1,1],[0,1]],[[1,0,1],[0,1]],[[1,1,1],[1,1]]].
+trials(Ex_or1, Op1, Op2, List1) :-
+        Ex_or1=ex_or,
+        Op1=2,
+        Op2=1,
+        List1=[[[0,0],[0]],[[0,1],[1]],[[1,0],[1]],[[1,1],[1]]].
+trials(Rev_31, Op1, Op2, List1) :-
+        Rev_31=rev_3,
+        Op1=3,
+        Op2=3,
+        List1=[[[0,0,0],[0,0,0]],[[0,0,1],[1,0,0]],[[0,1,0],[0,1,0]],[[0,1,1],[1,1,0]],[[1,0,0],[0,0,1]],[[1,0,1],[1,0,1]],[[1,1,0],[0,1,1]],[[1,1,1],[1,1,1]]].
+trials(Rand_1_21, Op1, Op2, List1) :-
+        Rand_1_21=rand_1_2,
+        Op1=1,
+        Op2=2,
+        List1=[[[0],[1,1]],[[1],[1,1]],[[2],[1,0]],[[3],[1,1]],[[4],[0,0]],[[5],[0,1]],[[6],[1,0]],[[7],[0,0]]].
+trials(Rand_3_21, Op1, Op2, List1) :-
+        Rand_3_21=rand_3_2,
+        Op1=3,
+        Op2=2,
+        List1=[[[0,0,0],[0,1]],[[0,0,1],[1,0]],[[0,1,0],[1,1]],[[0,1,1],[1,1]],[[1,0,0],[0,1]],[[1,0,1],[0,1]],[[1,1,0],[0,0]],[[1,1,1],[0,1]]].
+test(A_to_d1, N) :-
+        A_to_d1=a_to_d,
+        A_to_d_21=a_to_d_2,
+        Op1=1,
+        List1=[0.5,0.5],
+        run_example(A_to_d_21, Op1, List1, N).
+test(Ex_or1, N) :-
+        Ex_or1=ex_or,
+        Ex_or2=ex_or,
+        Op1=1,
+        List1=[0.5],
+        run_example(Ex_or2, Op1, List1, N).
+test(Bin_add1, N) :-
+        Bin_add1=bin_add,
+        Bin_add2=bin_add,
+        Op1=1,
+        List1=[0.5,0.5],
+        run_example(Bin_add2, Op1, List1, N).
+test(Rev_31, N) :-
+        Rev_31=rev_3,
+        Rev_32=rev_3,
+        Op1=1,
+        List1=[0.5,0.5,0.5],
+        run_example(Rev_32, Op1, List1, N).
+test(Rand_1_21, N) :-
+        Rand_1_21=rand_1_2,
+        Rand_1_22=rand_1_2,
+        Op1=1,
+        List1=[0.5,0.5],
+        run_example(Rand_1_22, Op1, List1, N).
+test(Rand_3_21, N) :-
+        Rand_3_21=rand_3_2,
+        Rand_3_22=rand_3_2,
+        Op1=1,
+        List1=[0.5,0.5],
+        run_example(Rand_3_22, Op1, List1, N).
+go :-
+        X=bin_add,
+        test(X, N),
+        printf('N = %\n', [N]).
+run_example(Name, Error, Start, N) :-
+        learner(Name, Error, N), !,
+        tester(Name, Start, N), !.
+learner(Name, Error, N) :-
+        trials(Name, In, Out, T),
+        makenet(In, Out, N),
+        learn(T, N, Error),
+        findnet(N).
+tester(Name, Start, N) :-
+        trials(Name, In, Out, T),
+        tester1(T, Start, N).
+tester1(Nil1, _1, _2) :-
+        Nil1=[].
+tester1(List1, Start, N) :-
+        List1=[[In,Out]|IOs],
+        Op1=5,
+        run_net(Op1, In, Start, N, NewOut),
+        tester_check(In, Out, NewOut),
+        tester1(IOs, Start, N).
+tester_check(_1, _2, _3).
+findnet(Net1) :-
+        Net1=net(W,V,B),
+        findarray(W),
+        findarray(V),
+        findvals(B).
+findarray(Nil1) :-
+        Nil1=[].
+findarray(List1) :-
+        List1=[A|As],
+        findvals(A),
+        findarray(As).
+findvals(Nil1) :-
+        Nil1=[].
+findvals(List1) :-
+        List1=[A|As],
+        findval(A),
+        findvals(As).
+findval(Op1) :-
+        Op1=0.
+findval(X) :-
+        X>8,
+        Op1=8,
+        findposval(X, Op1).
+findval(X) :-
+        X>0,
+        X<8,
+        Op1=0,
+        Op2=8,
+        findval(X, Op1, Op2).
+findval(X) :-
+        X< -8,
+        Op1= -8,
+        findnegval(X, Op1).
+findval(X) :-
+        X<0,
+        X> -8,
+        Op1= -8,
+        Op2=0,
+        findval(X, Op1, Op2).
+findposval(Op1, A) :-
+        Op1=2*A.
+findposval(X, A) :-
+        X<2*A, !,
+        Op1=2*A,
+        findval(X, A, Op1).
+findposval(X, A) :-
+        Op1=2*A,
+        findposval(X, Op1).
+findnegval(Op1, A) :-
+        Op1=2*A.
+findnegval(X, A) :-
+        X>2*A, !,
+        Op1=2*A,
+        findval(X, Op1, A).
+findnegval(X, A) :-
+        Op1=2*A,
+        findnegval(X, Op1).
+findval(X, A, B) :-
+        Op1=0.5*A+0.5*B,
+        findval2(X, A, B, Op1).
+findval2(M, A, B, M1) :-
+        M1=M.
+findval2(X, A, B, M) :-
+        X<M, !,
+        findval(X, A, M).
+findval2(X, A, B, M) :-
+        findval(X, M, B).
+
+?- go.

@@ -1,0 +1,151 @@
+% CVS: $Id: rings-on-pegs.clpr,v 1.3 1998/10/19 06:35:25 pets Exp $
+goal :- puzzle(X).
+
+%%% Combinatorial puzzle.
+
+% Given a pegboard on which a number of pegs are set
+% and a collection of rings joined with strings of various lengths,
+% place a ring on each peg (without breaking a string).
+
+% For example, the simple instance 
+% ({peg1 at (0,0), peg2 at (3,0), peg3 at (3,1)}, {ring1,ring2,ring3},
+%  {string of length 3 between ring1 and ring2, 
+%   string of length 2 between ring2 and ring3})
+% admits solution {ring1-peg1, ring2-peg2, ring3-peg3}.
+
+% Algorithm: test&generate.
+% Output: the search tree ("[depth times @@] ring:(Xpos,Ypos)");
+%         "!" indicates a candidate solution.
+
+% puzzle(Infile)
+puzzle(Infile) :-
+    ztime,
+    see(Infile),
+    read(Nb_of_rings),
+    assign_vars(Nb_of_rings,Rings),
+    ctime(T1),
+    printf("\nInitialisation en % secondes\n",[T1]),
+    test(Nb_of_rings,Rings),
+    ctime(T2),
+    printf("\nContraintes exprimees apres % secondes\n",[T2]),
+    read(Nb_of_pegs),
+    get_pegs(Nb_of_pegs,Pegs),
+    order_pegs(Pegs,Ordered_pegs),
+    ctime(T3),
+    printf("\nPieux lus et ordonnes apres % secondes\n",[T3]),
+    !,
+    solve(Ordered_pegs,Rings),
+    seen.
+
+% solve(Pegs,Rings)
+solve(Pegs,Rings) :-
+    generate(Rings,Pegs),
+    printf("!",[]),
+    ctime(T),
+    printf("\nSolution trouvee apres % secondes\n",[T]),
+    fail.
+solve(_,_) :-
+    ctime(T),
+    printf("\nTemps total: % secondes\n",[T]).
+
+% assign_vars(Nb_of_rings,Rings)
+assign_vars(0,[]).
+assign_vars(N, [(N,(X,Y))|Rs]) :-
+    assign_vars(N-1, Rs).
+
+% test(Nb_of_rings,Rings)
+test(0, _):-
+    !.
+test(N,[(R1,(X1,Y1))|Rings]) :-    
+    test_(N-1,(X1,Y1),Rings),
+    test(N-1,Rings).
+
+test_(0,_,_):-
+    !.
+test_(N,(X1,Y1),[(R2,(X2,Y2))|Rings]) :- 
+    read(D),
+    D > 0,
+    !,
+    D * D >= (X1-X2)*(X1-X2) + (Y1-Y2)*(Y1-Y2),
+    test_(N-1,(X1,Y1),Rings).
+test_(N,(X1,Y1),[(R2,(X2,Y2))|Rings]) :- 
+    test_(N-1,(X1,Y1),Rings).
+
+%get_pegs(Nb_of_pegs,Pegs)
+get_pegs(0,[]):-
+    !.
+get_pegs(Nb_of_pegs,[(X,Y)|Pegs]):-
+    read(X), read(Y),
+    get_pegs(Nb_of_pegs - 1, Pegs).
+
+%order_pegs(Pegs,Ordered_Pegs)
+order_pegs(Pegs,[P1,P2,P3,P4|Rest]):-
+    min_x(Pegs,P1,Ps1),
+    max_x(Ps1,P2,Ps2),
+    min_y(Ps2,P3,Ps3),
+    max_y(Ps3,P4,Rest).
+
+min_x([P],P,[]).
+min_x([(X,Y)|Pegs],(X,Y),[(X1,Y1)|Rest]):-
+    min_x(Pegs,(X1,Y1),Rest),
+    X1 >= X,
+    !.
+min_x([(X,Y)|Pegs],(X1,Y1),[(X,Y)|Rest]):-
+    min_x(Pegs,(X1,Y1),Rest).
+
+max_x([P],P,[]).
+max_x([(X,Y)|Pegs],(X,Y),[(X1,Y1)|Rest]):-
+    max_x(Pegs,(X1,Y1),Rest),
+    X >= X1,
+    !.
+max_x([(X,Y)|Pegs],(X1,Y1),[(X,Y)|Rest]):-
+    max_x(Pegs,(X1,Y1),Rest).
+
+min_y([P],P,[]).
+min_y([(X,Y)|Pegs],(X,Y),[(X1,Y1)|Rest]):-
+    min_y(Pegs,(X1,Y1),Rest),
+    Y1 >= Y,
+    !.
+min_y([(X,Y)|Pegs],(X1,Y1),[(X,Y)|Rest]):-
+    min_y(Pegs,(X1,Y1),Rest).
+
+max_y([P],P,[]).
+max_y([(X,Y)|Pegs],(X,Y),[(X1,Y1)|Rest]):-
+    max_y(Pegs,(X1,Y1),Rest),
+    Y >= Y1,
+    !.
+max_y([(X,Y)|Pegs],(X1,Y1),[(X,Y)|Rest]):-
+    max_y(Pegs,(X1,Y1),Rest).
+
+
+% generate(Rings,Pegs)
+generate(Rings,Pegs) :-
+    generate(Rings,Pegs,0).
+% generate(Rings,Pegs,Profondeur)
+generate(_,[],_).
+generate(Rings,[(X,Y)|Pegs],Depth) :-
+    delete((R,(X,Y)),Rings,Reste),
+    printf("\n",[]),
+    prettyprint(Depth+1),
+    printf("%:(%,%)",[R,X,Y]),
+    generate(Reste,Pegs,Depth+1).
+
+delete((A,(X,Y)),[(A,(X,Y))|Ls],Ls).
+delete(E,[F|Ls],[F|Reste]) :-
+    delete(E,Ls,Reste).
+
+prettyprint(0) :-
+    !.
+prettyprint(N) :-
+    printf("@@ ",[]),
+    prettyprint(N-1).
+
+print_list([]):-
+    printf("\n",[]).
+print_list([E|Ls]):-
+    printf(" % ;",[E]),
+    print_list(Ls).
+
+?- printf("\n>>> Sample goals: puzzle(\042prob-10-10\042), puzzle(\042prob-20-8\042)\n", []).
+
+

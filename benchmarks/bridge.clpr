@@ -1,0 +1,538 @@
+% CVS: $Id: bridge.clpr,v 1.3 1998/10/19 06:35:05 pets Exp $
+goal :- go3.
+
+analysis(Static1) :-
+        Static1=static.
+title(List1) :-
+        List1=[65,32,115,97,109,112,108,101,32,98,114,105,100,103,101,46].
+node(N, C) :-
+        Op1=1,
+        Op2=9,
+        Tuple1=tuple(0.0,0.0,0.0),
+        Tuple2=tuple(8.8,5.080682303,0.0),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, N, C).
+node(N, C) :-
+        Op1=10,
+        Op2=26,
+        Tuple1=tuple(0.0,0.0,1.6),
+        Tuple2=tuple(8.8,5.080682303,1.6),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, N, C).
+node(N, C) :-
+        Op1=27,
+        Op2=130,
+        l_range(Op1, Op2, N),
+        Op3=N-26,
+        node(Op3, C1),
+        Tuple1=tuple(0,30.0/4,0),
+        l_trans(C1, Tuple1, C).
+node(N, C) :-
+        Y1=1.875,
+        Y2=6.955682303,
+        Op1=131,
+        Op2=135,
+        Tuple1=tuple(0.0,Y1,0.0),
+        Tuple2=tuple(8.8,Y2,0.0),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, N, C).
+node(N, C) :-
+        Y1=1.875,
+        Y2=6.955682303,
+        Op1=136,
+        Op2=152,
+        Tuple1=tuple(0.0,Y1,1.6),
+        Tuple2=tuple(8.8,Y2,1.6),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, N, C).
+node(N, C) :-
+        Op1=153,
+        Op2=196,
+        l_range(Op1, Op2, N),
+        Op3=N-22,
+        node(Op3, C1),
+        Tuple1=tuple(0,30.0/16,0),
+        l_trans(C1, Tuple1, C).
+node(N, C) :-
+        Op1=197,
+        Op2=394,
+        l_range(Op1, Op2, N),
+        Op3=N-66,
+        node(Op3, C1),
+        Tuple1=tuple(0,30.0/4,0),
+        l_trans(C1, Tuple1, C).
+elm(E, Op1, Op2, Op3, N, Angle1) :-
+        Op1=2,
+        Op2=3,
+        Op3=1,
+        Angle1=angle(0),
+        Op4=1,
+        Op5=9,
+        l_list(Op4, Op5, L),
+        Op6=1,
+        l_elmline(Op6, L, E, N).
+elm(Op1, Op2, Op3, Op4, List1, Angle1) :-
+        Op1=9,
+        Op2=2,
+        Op3=3,
+        Op4=1,
+        List1=[10,2],
+        Angle1=angle(0).
+elm(Op1, Op2, Op3, Op4, List1, Angle1) :-
+        Op1=10,
+        Op2=2,
+        Op3=3,
+        Op4=1,
+        List1=[14,2],
+        Angle1=angle(0).
+elm(E, Op1, Op2, Op3, N, Angle1) :-
+        Op1=2,
+        Op2=3,
+        Op3=1,
+        Angle1=angle(0),
+        Op4=11,
+        Op5=16,
+        l_range(Op4, Op5, E),
+        Op6=E-2,
+        elm(Op6, _1, _2, _3, N1, _4),
+        Tuple1=tuple(8.8/4,5.080682303/4,0),
+        l_transn(N1, Tuple1, N).
+elm(E, Op1, Op2, Op3, N, Angle1) :-
+        Op1=2,
+        Op2=3,
+        Op3=1,
+        Angle1=angle(0),
+        Op4=17,
+        Op5=80,
+        l_range(Op4, Op5, E),
+        Op6=E-16,
+        elm(Op6, _1, _2, _3, N1, _4),
+        Tuple1=tuple(0,30.0/4,0),
+        l_transn(N1, Tuple1, N).
+elm(Op1, Op2, Op3, Op4, List1, Angle1) :-
+        Op1=81,
+        Op2=2,
+        Op3=4,
+        Op4=1,
+        List1=[1,131],
+        Angle1=angle(0).
+elm(Op1, Op2, Op3, Op4, List1) :-
+        Op1=82,
+        Op2=13,
+        Op3=1,
+        Op4=1,
+        List1=[1,131,136,10].
+elm(Op1, Op2, Op3, Op4, List1, Angle1) :-
+        Op1=83,
+        Op2=2,
+        Op3=5,
+        Op4=1,
+        List1=[10,136],
+        Angle1=angle(0).
+elm(E, T, M, G, N, A) :-
+        Op1=84,
+        Op2=95,
+        l_range(Op1, Op2, E),
+        Op3=E-3,
+        elm(Op3, T, M, G, N1, A),
+        Tuple1=tuple(8.8/4,5.080682303/4,0),
+        l_transn(N1, Tuple1, N).
+elm(E, T, M, G, N) :-
+        Op1=84,
+        Op2=95,
+        l_range(Op1, Op2, E),
+        Op3=E-3,
+        elm(Op3, T, M, G, N1),
+        Tuple1=tuple(8.8/4,5.080682303/4,0),
+        l_transn(N1, Tuple1, N).
+elm(Op1, Op2, Op3, Op4, List1) :-
+        Op1=96,
+        Op2=13,
+        Op3=2,
+        Op4=2,
+        List1=[10,11,137,136].
+elm(E, T, M, G, N) :-
+        Op1=97,
+        Op2=111,
+        l_range(Op1, Op2, E),
+        Op3=E-1,
+        elm(Op3, T, M, G, N1),
+        Tuple1=tuple(8.8/16,5.080682303/16,0),
+        l_transn(N1, Tuple1, N).
+elm(E, T, G, M, N, A) :-
+        Op1=112,
+        Op2=576,
+        l_range(Op1, Op2, E),
+        Op3=E-31,
+        elm(Op3, T, M, G, N1, A),
+        Tuple1=tuple(0,30.0/16,0),
+        l_transn(N1, Tuple1, N).
+elm(E, T, G, M, N) :-
+        Op1=112,
+        Op2=576,
+        l_range(Op1, Op2, E),
+        Op3=E-31,
+        elm(Op3, T, M, G, N1),
+        Tuple1=tuple(0,30.0/16,0),
+        l_transn(N1, Tuple1, N).
+geometry(Op1, List1) :-
+        Op1=1,
+        List1=[(th,0.016)].
+geometry(Op1, List1) :-
+        Op1=2,
+        List1=[(th,0.225)].
+geometry(Op1, List1) :-
+        Op1=3,
+        List1=[(area,A),(iy,I),(iz,I),(j,2*I),(ty,T),(tz,T),(ctors,T)],
+        Pow1=1000000,
+        1850.0=Pow1*A,
+        Pow2=1000000000000,
+        1830000.0=Pow2*I,
+        T=0.1016.
+geometry(Op1, List1) :-
+        Op1=4,
+        List1=[(area,A),(iy,Iy),(iz,Iz),(j,J),(ty,W),(tz,H),(ctors,2.8e-06)],
+        H=0.028,
+        W=0.53,
+        properties(H, W, A, Iy, Iz, J).
+geometry(Op1, List1) :-
+        Op1=5,
+        List1=[(area,A),(iy,Iy),(iz,Iz),(j,J),(ty,W),(tz,H),(ctors,3.2e-06)],
+        H=0.032,
+        W=0.53,
+        properties(H, W, A, Iy, Iz, J).
+properties(Height, Width, Area, Iy, Iz, J) :-
+        Area=Height*Width,
+        Pow1=pow(Height,3),
+        Op1=Pow1*Width,
+        Iy=0.08333333333333333*Op1,
+        Pow2=pow(Width,3),
+        Op2=Pow2*Height,
+        Iz=0.08333333333333333*Op2,
+        J=Iy+Iz.
+material(Op1, List1) :-
+        Op1=1,
+        List1=[(e,200000000000),(den,7850),(pr,0.3),(g,76000000000)].
+material(Op1, List1) :-
+        Op1=2,
+        List1=[(e,28560000000),(den,2400),(pr,0.43),(g,12420000000)].
+bc(N, List1) :-
+        List1=[(x,0),(y,0),(z,0),(ry,0),(rz,0)],
+        Op1=1,
+        Op2=5,
+        Tuple1=tuple(0.0,0.0,0.0),
+        Tuple2=tuple(8.8,5.080682303,0.0),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, _1, C),
+        node(N, C).
+bc(N, List1) :-
+        List1=[(x,0),(y,0),(z,0),(ry,0),(rz,0)],
+        Op1=1,
+        Op2=5,
+        Tuple1=tuple(0.0,30.0,0.0),
+        Tuple2=tuple(8.8,30.0+5.080682303,0.0),
+        l_nodline(Op1, Op2, Tuple1, Tuple2, _1, C),
+        node(N, C).
+cload(N, List1) :-
+        List1=[(z,Load)],
+        Xcenter=4.4,
+        Ycenter=17.5403411515,
+        xdiff(Xdiff),
+        X=Xcenter+Xdiff,
+        ydiff(Ydiff),
+        Y=Ycenter+Ydiff,
+        ldval(Ydiff, Load),
+        Tuple1=tuple(X,Y,1.6),
+        closest(Tuple1, N).
+xdiff(Op1) :-
+        Op1= -2.4.
+xdiff(Op1) :-
+        Op1= -0.6.
+xdiff(Op1) :-
+        Op1=0.6.
+xdiff(Op1) :-
+        Op1=2.4.
+ydiff(Op1) :-
+        Op1= -9.5.
+ydiff(Op1) :-
+        Op1= -5.5.
+ydiff(Op1) :-
+        Op1=0.5.
+ydiff(Op1) :-
+        Op1=6.5.
+ldval(Op1, Op2) :-
+        Op1= -9.5,
+        Op2= -30000.
+ldval(Ydiff, Op1) :-
+        Op1= -90000,
+        abs(Ydiff+9.5)>0.
+notnode(N) :-
+        node(N), !,
+        fail.
+notnode(_1).
+closest(C, Closest) :-
+        Op1=1,
+        node(Op1, C1),
+        dist(C, C1, D),
+        Op2=2,
+        Op3=1,
+        closest(Op2, C, D, Op3, Closest).
+closest(N, _1, _2, Closest, Closest1) :-
+        Closest1=Closest,
+        notnode(N).
+closest(N, C1, D1, N1, Closest) :-
+        node(N, C),
+        dist(C, C1, D),
+        min(D, D1, D2, N, N1, N2),
+        Op1=N+1,
+        closest(Op1, C1, D2, N2, Closest).
+dist(Tuple1, Tuple2, Pow4) :-
+        Tuple1=tuple(X1,Y1,Z1),
+        Tuple2=tuple(X2,Y2,Z2),
+        Op1=Z1-Z2,
+        Op2=Y1-Y2,
+        Op3=X1-X2,
+        Pow1=pow(Op1,2),
+        Pow2=pow(Op2,2),
+        Pow3=pow(Op3,2),
+        Op4=Pow3+Pow2+Pow1,
+        Pow4=pow(Op4,0.5).
+min(D1, D2, D11, N1, _1, N11) :-
+        D11=D1,
+        N11=N1,
+        D2=<D1, !.
+min(D1, D2, D21, _1, N2, N21) :-
+        D21=D2,
+        N21=N2,
+        D1>D2, !.
+l_range(L, H, L1) :-
+        L1=L,
+        H=<L.
+l_range(L, H, M) :-
+        L<H,
+        Op1=L+1,
+        l_range(Op1, H, M).
+l_list(L, H, Nil1) :-
+        Nil1=[],
+        L>H.
+l_list(L, H, List1) :-
+        List1=[L|List],
+        H=<L,
+        Op1=L+1,
+        l_list(Op1, H, List).
+l_nodline(L, H, Tuple1, Tuple2, Op1, Tuple3) :-
+        Tuple1=tuple(X1,Y1,Z1),
+        Tuple2=tuple(X2,Y2,Z2),
+        Op1=N+L,
+        Tuple3=tuple(Nx+X1,Ny+Y1,Nz+Z1), !,
+        Op2=0,
+        Op3=H-L,
+        Tuple4=tuple(X2-X1,Y2-Y1,Z2-Z1),
+        Tuple5=tuple(Nx,Ny,Nz),
+        l_nodline1(Op2, Op3, Tuple4, N, Tuple5).
+l_nodline(L, H, Tuple1, Tuple2, N, Tuple3) :-
+        Tuple1=tuple(X1,Y1),
+        Tuple2=tuple(X2,Y2),
+        Tuple3=tuple(X,Y), !,
+        Tuple4=tuple(X1,Y1,0),
+        Tuple5=tuple(X2,Y2,0),
+        Tuple6=tuple(X,Y,_1),
+        l_nodline(L, H, Tuple4, Tuple5, N, Tuple6).
+l_nodline(L, H, X1, X2, N, X) :- !,
+        Tuple1=tuple(X1,0,0),
+        Tuple2=tuple(X2,0,0),
+        Tuple3=tuple(X,_1,_2),
+        l_nodline(L, H, Tuple1, Tuple2, N, Tuple3).
+l_nodline1(I, N, Tuple1, I2, Tuple2) :-
+        Tuple1=tuple(X,Y,Z),
+        I2=I,
+        Tuple2=tuple(I1*X,I1*Y,I1*Z),
+        N=<I,
+        I=I1*N.
+l_nodline1(I, N, C, I1, C1) :-
+        I<N,
+        Op1=I+1,
+        l_nodline1(Op1, N, C, I1, C1).
+l_elmline(E, List1, E1, List2) :-
+        List1=[A,B|_1],
+        E1=E,
+        List2=[A,B].
+l_elmline(M, List1, E, N) :-
+        List1=[_1,B|C],
+        Op1=M+1,
+        List2=[B|C],
+        l_elmline(Op1, List2, E, N).
+l_elmtri(E, List1, List2, E1, List3) :-
+        List1=[A,B|_1],
+        List2=[C,_2|_3],
+        E1=E,
+        List3=[A,B,C].
+l_elmtri(E, List1, List2, Op1, List3) :-
+        List1=[_1,B|_2],
+        List2=[C,D|_3],
+        Op1=E+1,
+        List3=[B,D,C].
+l_elmtri(S, List1, List2, E, N) :-
+        List1=[_1|A],
+        List2=[_2|B],
+        Op1=S+2,
+        l_elmtri(Op1, A, B, E, N).
+l_elmquad(E, List1, List2, E1, List3) :-
+        List1=[A,B|_1],
+        List2=[C,D|_2],
+        E1=E,
+        List3=[A,B,D,C].
+l_elmquad(S, List1, List2, E, N) :-
+        List1=[_1|A],
+        List2=[_2|B],
+        Op1=S+1,
+        l_elmquad(Op1, A, B, E, N).
+l_refl(M, L, Tuple1) :-
+        Tuple1=tuple(2*Midx-Mx,2*Midy-My),
+        M=(Mx,My),
+        L=l((P1x,P1y),(P2x,P2y)),
+        L1=l(M,(Mx+P2y-P1y,My-P2x+P1x)),
+        Tuple2=tuple(Midx,Midy),
+        l_isect(L, L1, Tuple2).
+l_isect(L1, L2, Tuple1) :-
+        L1=l((Px,Py),(Qx,Qy)),
+        L2=l((Rx,Ry),(Sx,Sy)),
+        Tuple1=tuple(X,Y),
+        Op1=Alpha1*Qx,
+        Op2=Alpha1*Px,
+        X=Op2+Qx-Op1,
+        Op3=Alpha1*Qy,
+        Op4=Alpha1*Py,
+        Y=Op4+Qy-Op3,
+        Op5=Alpha2*Sx,
+        Op6=Alpha2*Rx,
+        X=Op6+Sx-Op5,
+        Op7=Alpha2*Sy,
+        Op8=Alpha2*Ry,
+        Y=Op8+Sy-Op7.
+l_refln(Nil1, _1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+l_refln(List1, L, List2) :-
+        List1=[M|Ms],
+        List2=[N|Ns],
+        node(M, C1),
+        l_refl(C1, L, C2),
+        node(N, C2),
+        l_refln(Ms, L, Ns).
+l_rot(Tuple1, D, Tuple2) :-
+        Tuple1=tuple(X,Y),
+        Tuple2=tuple(X1,Y1),
+        Sin1=sin(D),
+        Cos1=cos(D),
+        Op1=Sin1*Y,
+        Op2=Cos1*X,
+        X1=Op2-Op1,
+        Cos2=cos(D),
+        Sin2=sin(D),
+        Op3=Cos2*Y,
+        Op4=Sin2*X,
+        Y1=Op4+Op3.
+l_rotn(Nil1, _1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+l_rotn(List1, D, List2) :-
+        List1=[M|Ms],
+        List2=[N|Ns],
+        node(M, C1),
+        l_rot(C1, D, C2),
+        node(N, C2),
+        l_rotn(Ms, D, Ns).
+l_rotx(Tuple1, D, Tuple2) :-
+        Tuple1=tuple(X,Y,Z),
+        Tuple2=tuple(X,Y1,Z1),
+        Sin1=sin(D),
+        Cos1=cos(D),
+        Op1=Sin1*Z,
+        Op2=Cos1*Y,
+        Y1=Op2-Op1,
+        Cos2=cos(D),
+        Sin2=sin(D),
+        Op3=Cos2*Z,
+        Op4=Sin2*Y,
+        Z1=Op4+Op3.
+l_roty(Tuple1, D, Tuple2) :-
+        Tuple1=tuple(X,Y,Z),
+        Tuple2=tuple(X1,Y,Z1),
+        Sin1=sin(D),
+        Cos1=cos(D),
+        Op1=Sin1*Z,
+        Op2=Cos1*X,
+        X1=Op2+Op1,
+        Cos2=cos(D),
+        Sin2=sin(D),
+        Op3=Cos2*Z,
+        Op4=Sin2*X,
+        Z1= Op3-Op4.
+l_rotz(Tuple1, D, Tuple2) :-
+        Tuple1=tuple(X,Y,Z),
+        Tuple2=tuple(X1,Y1,Z),
+        Sin1=sin(D),
+        Cos1=cos(D),
+        Op1=Sin1*Y,
+        Op2=Cos1*X,
+        X1=Op2-Op1,
+        Cos2=cos(D),
+        Sin2=sin(D),
+        Op3=Cos2*Y,
+        Op4=Sin2*X,
+        Y1=Op4+Op3.
+l_trans(Tuple1, Tuple2, Tuple3) :-
+        Tuple1=tuple(X,Y,Z),
+        Tuple2=tuple(Dx,Dy,Dz),
+        Tuple3=tuple(X+Dx,Y+Dy,Z+Dz).
+l_trans(Tuple1, Tuple2, Tuple3) :-
+        Tuple1=tuple(X,Y),
+        Tuple2=tuple(Dx,Dy),
+        Tuple3=tuple(X+Dx,Y+Dy).
+l_trans(X, Dx, Op1) :-
+        Op1=X+Dx.
+l_transn(Nil1, _1, Nil2) :-
+        Nil1=[],
+        Nil2=[].
+l_transn(List1, D, List2) :-
+        List1=[M|Ms],
+        List2=[N|Ns],
+        node(M, C1),
+        l_trans(C1, D, C2),
+        node(N, C2),
+        l_transn(Ms, D, Ns).
+collect_all(N, N1, L, L1) :-
+        N1=N,
+        L1=L.
+collect_all(N, Low, In, L) :-
+        N>Low,
+        node(N, Vert),
+        Op1=N-1,
+        List1=[Vert|In],
+        collect_all(Op1, Low, List1, L).
+
+/*RB
+rungo :-
+        Op1=390,
+        Op2=350,
+        Nil1=[],
+        collect_all(Op1, Op2, Nil1, L).
+
+go1(N) :-
+        Rungo1=rungo,
+        run_g(N, Rungo1),
+        ctime(T),
+        printf('T %\n', [T]).
+go2(N) :-
+        Node1=node(394,X),
+        run_g(N, Node1),
+        ctime(T),
+        printf('X % T %\n', [X,T/40]).
+*/
+
+go3 :-
+        ztime,
+        Y>=31.9,
+        N>300,
+        Tuple1=tuple(X,Y,Z),
+        node(N, Tuple1),
+        ctime(T),
+        printf('X % Y % N % T %\n', [X,Y,N,T]).
+
+?- go3.

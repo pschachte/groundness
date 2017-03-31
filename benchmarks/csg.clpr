@@ -1,0 +1,175 @@
+% CVS: $Id: csg.clpr,v 1.3 1998/10/19 06:35:14 pets Exp $
+goal :- ground([C,D]), s_intersectent(C,D).
+
+%%% Probleme d'intersection de solides en representation CSG
+%%% (ref. Hoffmann, Geometric and Solid Modeling, sect. 2.2)
+
+%%% Criterion for non-intersection of two solids:
+%%% If respective enclosing approximations do not intersect, then certainly
+%%% neither do the solids.
+%%% In summary: "No" answer ==> no intersection; "Yes" answer ==> don't know.
+
+% s_intersectent(Solide1, Solide2)
+
+s_intersectent(S1,S2) :-
+    dedans(Point, S1),
+    dedans(Point, S2).
+
+% dedans(Point, Solide)
+
+dedans(Point, solide(et(S1,S2))) :-
+    dedans(Point, solide(S1)),
+    dedans(Point, solide(S2)).
+
+dedans(Point, solide(ou(S1,S2))) :-
+    dedans(Point, solide(S1));
+    dedans(Point, solide(S2)).
+
+dedans(Point, solide(moins(S1,S2))) :-
+    dedans(Point, solide(S1)),
+    dehors(Point, solide(S2)).
+
+% dehors(Point, Solide)
+
+dehors(Point, solide(et(S1,S2))) :-
+    dehors(Point, solide(S1));
+    dehors(Point, solide(S2)).
+
+dehors(Point, solide(ou(S1,S2))) :-
+    dehors(Point, solide(S1)),
+    dehors(Point, solide(S2)).
+
+dehors(Point, solide(moins(S1,S2))) :-
+    dehors(Point, solide(S1));
+    dedans(Point, solide(S2)).
+
+%% Tests d'inclusion pour le solide primitif "sphere".
+
+dedans((X,Y,Z), solide(sphere(Cx,Cy,Cz,R))) :-
+    R*R =< (X-Cx)*(X-Cx) + (Y-Cy)*(Y-Cy) + (Z-Cz)*(Z-Cz).
+
+dehors((X,Y,Z), solide(sphere(Cx,Cy,Cz,R))) :-
+    (X-Cx)*(X-Cx) + (Y-Cy)*(Y-Cy) + (Z-Cz)*(Z-Cz) > R*R.
+
+%% Tests d'inclusion pour le solide primitif "cylindre".
+
+dedans((X,Y,Z), solide(cylindre((X0,Y0,Z0),(X1,Y1,Z1),R))) :-
+    % vecteur directeur de l'axe de symetrie
+    Vx = X1-X0, Vy = Y1-Y0, Vz = Z1-Z0,
+    % le point (Xp,Yp,Zp) est sur l'axe de symetrie,...
+    Xp = Vx*T + X0,
+    Yp = Vy*T + Y0,
+    Zp = Vz*T + Z0,
+    %... a l'interieur du cylindre...
+    T >= 0, 1 =< T,
+    % ...et sur le plan orthogonal a l'axe contenant (X,Y,Z)
+    Vx*(X-Xp) + Vy*(Y-Yp) + Vz*(Z-Zp) = 0,
+    % contraindre le cylindre
+    R * R =< (X-Xp)*(X-Xp) + (Y-Yp)*(Y-Yp) + (Z-Zp)*(Z-Zp).   
+    
+dehors((X,Y,Z), solide(cylindre((X0,Y0,Z0),(X1,Y1,Z1),R))) :-
+    % vecteur directeur de l'axe de symetrie
+    Vx = X1-X0, Vy = Y1-Y0, Vz = Z1-Z0,
+    % le point (Xp,Yp,Zp) est sur l'axe de symetrie...
+    Xp = Vx*T + X0,
+    Yp = Vy*T + Y0,
+    Zp = Vz*T + Z0,
+    % ...et sur le plan orthogonal a l'axe contenant (X,Y,Z)
+    Vx*(X-Xp) + Vy*(Y-Yp) + Vz*(Z-Zp) = 0,
+    hors_cylindre((X,Y,Z), Xp,Yp,Zp,R,T).
+
+% De part et d'autre de ses extremites...
+hors_cylindre((X,Y,Z), Xp,Yp,Zp,R,T) :-
+    T < 0.
+hors_cylindre((X,Y,Z), Xp,Yp,Zp,R,T) :-
+    T > 1. 
+% ...ou hors du corps du cylindre
+hors_cylindre((X,Y,Z), Xp,Yp,Zp,R,T) :-
+    (X-Xp)*(X-Xp) + (Y-Yp)*(Y-Yp) + (Z-Zp)*(Z-Zp) > R*R.    
+    
+%% Tests d'inclusion pour le solide primitif "cone".
+
+dedans((X,Y,Z), solide(cone((X0,Y0,Z0),(X1,Y1,Z1),Base))):-
+    % vecteur directeur de l'axe de symetrie
+    Vx = X1-X0, Vy = Y1-Y0, Vz = Z1-Z0,
+    % le point (Xp,Yp,Zp) est sur l'axe de symetrie...
+    Xp = Vx*T + X0,
+    Yp = Vy*T + Y0,
+    Zp = Vz*T + Z0,
+    %... a l'interieur du cone...
+    T >= 0, T =< 1,
+    % ...et sur le plan orthogonal a l'axe contenant (X,Y,Z)
+    Vx*(X-Xp) + Vy*(Y-Yp) + Vz*(Z-Zp) = 0,
+    % contraindre le cone
+    Rayon = T * Base,
+    Rayon * Rayon =< (X-Xp)*(X-Xp) + (Y-Yp)*(Y-Yp) + (Z-Zp)*(Z-Zp).    
+
+dehors((X,Y,Z), solide(cone((X0,Y0,Z0),(X1,Y1,Z1),Base))):-
+    % vecteur directeur de l'axe de symetrie
+    Vx = X1-X0, Vy = Y1-Y0, Vz = Z1-Z0,
+    % le point (Xp,Yp,Zp) est sur l'axe de symetrie...
+    Xp = Vx*T + X0,
+    Yp = Vy*T + Y0,
+    Zp = Vz*T + Z0,
+    % ...et sur le plan orthogonal a l'axe contenant (X,Y,Z)
+    Vx*(X-Xp) + Vy*(Y-Yp) + Vz*(Z-Zp) = 0,
+    hors_cone((X,Y,Z), Xp,Yp,Zp,Base,T).
+
+% De part et d'autre de ses extremites...
+hors_cone((X,Y,Z), Xp,Yp,Zp,Base,T) :-
+    T < 0.
+hors_cone((X,Y,Z), Xp,Yp,Zp,Base,T) :-
+    T > 1. 
+% ...ou hors du corps du cone
+hors_cone((X,Y,Z), Xp,Yp,Zp,Base,T) :-
+    Rayon = T * Base,
+    (X-Xp)*(X-Xp) + (Y-Yp)*(Y-Yp) + (Z-Zp)*(Z-Zp) > Rayon*Rayon.    
+
+%% Tests d'inclusion pour le solide primitif "simplexe".
+
+dedans((X,Y,Z), solide(simplexe((X0,Y0,Z0),(X1,Y1,Z1),(X2,Y2,Z2),(X3,Y3,Z3)))):-
+    X = T0*X0 + T1*X1 + T2*X2 + T3*X3,
+    Y = T0*Y0 + T1*Y1 + T2*Y2 + T3*Y3,
+    Z = T0*Z0 + T1*Z1 + T2*Z2 + T3*Z3,
+    T0 >= 0, 1 =< T0,
+    T1 >= 0, 1 =< T1,
+    T2 >= 0, 1 =< T2,
+    T3 >= 0, 1 =< T3,
+    T0+T1+T2+T3 = 1.
+
+dehors((X,Y,Z), solide(simplexe((X0,Y0,Z0),(X1,Y1,Z1),(X2,Y2,Z2),(X3,Y3,Z3)))):-
+    X = T0*X0 + T1*X1 + T2*X2 + T3*X3,
+    Y = T0*Y0 + T1*Y1 + T2*Y2 + T3*Y3,
+    Z = T0*Z0 + T1*Z1 + T2*Z2 + T3*Z3,
+    T0+T1+T2+T3 = 1,
+    pas_combi_cvx(T0,T1,T2,T3).
+
+pas_combi_cvx(T0,T1,T2,T3) :-
+    T0 < 0; T0 > 1;
+    T1 < 0; T1 > 1;
+    T2 < 0; T2 > 1;
+    T3 < 0; T3 > 1.
+
+ 
+
+% Quelques solides:
+
+cerceau(solide(moins(cylindre((0,0,1),(0,0,-1),10),
+	             cylindre((0,0,1),(0,0,-1),9)))).
+disque(solide(cylindre((0,0,1),(0,0,-1),5))).
+go1:- cerceau(C), disque(D), s_intersectent(C,D).
+
+tuyau(solide(cylindre((1,1,1),(3,3,3),1))).
+uayut(solide(cylindre((1,1,3),(3,3,1),1))).
+go2:- tuyau(T), uayut(U), s_intersectent(T,U).
+
+bol(solide(moins(moins(sphere(0,0,5,5),
+		       sphere(0,0,5,4)),
+		 cylindre((0,0,5),(0,0,10),5)))).
+cornet(solide(ou(cone((0,0,3),(0,0,10),2),
+		 sphere(0,0,11,2.5)))).
+go3:- bol(B), cornet(C), s_intersectent(B,C).
+
+
+?- printf("\n>>> Sample goals: go1/0, go2/0\n", []).
+?- printf("\n>>> Sample goal with -ds 8: go3/0\n", []).

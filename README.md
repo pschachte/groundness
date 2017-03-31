@@ -3,7 +3,7 @@ An efficient groundness analyser for Prolog
 
 This is the groundness analyser described in the paper:
 
-Tania Armstrong, Kim Marriott, Peter Schachte, and Harald Søndergaard. []Two classes of Boolean functions for dependency analysis.](http://people.eng.unimelb.edu.au/schachte/papers/scp98.pdf) Science of Computer Programming, 31(1):3–45, May 1998.
+Tania Armstrong, Kim Marriott, Peter Schachte, and Harald Søndergaard. [Two classes of Boolean functions for dependency analysis.](http://people.eng.unimelb.edu.au/schachte/papers/scp98.pdf) Science of Computer Programming, 31(1):3–45, May 1998.
 
 It is based on the abstract domain Pos documented in the paper:
 
@@ -19,4 +19,4 @@ component](https://en.wikipedia.org/wiki/Strongly_connected_component) at a
 time), and then in the second, top-down, phase, uses the results computed
 in the first phase to determine the groundness of arguments to each
 predicate.  This approach is sound, but loses precision unless the analysis
-domain is /condensing/, which the Pos domain is.
+domain is _condensing_, which the Pos domain is.

@@ -1,0 +1,192 @@
+% CVS: $Id: circuits.eu,v 1.2 1998/10/19 04:21:15 pets Exp $
+/* 
+**	circuits.eu: Sample DC/AC circuit analysis 
+**	
+**	This euclid program solves DC/AC circuits. Each circuit is a
+**	list of components between nodes. In order to find the current 
+**	or the voltage between particular nodes you add voltometers or 
+**	amperometers with variables as their characteristics.
+**	This program is based directly on Kirchoff's two laws for electrical
+**	circuits.Currently the component that calculates the closed non-directed
+**	loops in the circuit is not present and the loops have to be supplied
+**	by the user at the top level query.
+**	This version does NOT take into account grounding of points and
+**	therefore does NOT use information on the voltage of each node
+**
+**
+**	Copyright (C) 1995 K J Dryllerakis - ALL RIGHTS RESERVED
+**
+**	$Id: circuits.eu,v 1.2 1998/10/19 04:21:15 pets Exp $
+*/
+
+/* 
+**	sample top level queries:
+**	solve_circuit( [
+**		[dc_source,source1,[10],[n1,n2]],
+**		[ampere_meter,am1,[I],[n2,n3]],
+**		[resistor,res1,[10],[n3,n1]],
+**		[volt_meter,vo1,[V],[n3,n1]]],
+**		[[n1,n2,n3,n1]]).
+**
+*/
+
+solve_circuit(CircuitDescription,Loops):-
+	prepare_circuit(CircuitDescription,Circuit),
+	Circuit=[Currents,Voltages],
+	kirchoff_law1(Currents),
+	kirchoff_law2(Voltages,Loops).
+
+/* 
+**	prepare_circuit(+Description,-Circuit)
+**		transform a list of components to an internal representation for
+**		the circuit. This representation consists of two lists:
+**		on for currents passing through nodes and one for 
+**		voltages between
+**		pairs of nodes. Each list is used to constraint the current or
+**		voltage values using the kirchoff laws.
+**		For the time being all components are between two nodes only
+**		Ofcourse this can be easily generalized
+*/
+
+prepare_circuit(Desc,Circ):-
+	prepare_circuit(Desc,[[],[]],Circ).
+prepare_circuit([],C,C):-!. /* Empty circuit description */
+prepare_circuit([[Type,Name,Characts,[N1,N2]]|Components],CIn,COut):-
+	add_component(Type,Name,N1,N2,Characts,CIn,C0),
+	prepare_circuit(Components,C0,COut).
+
+/* 
+**	add_component(Type,Label,N1,N2,Characteristics,+CircuitIn,-CircuitOut)
+**		add a component of type Type been between nodes N1 and N2
+**		to the CircuitIn to create CircuitOut
+*/
+
+add_component(Type,Label,N1,N2,Characteristics,CircuitIn,CircuitOut):-
+	formulae([Vt,It]),
+	component(Type,Characteristics,Vt,It),
+	update_currents(N1,Label,f(N1,N2),It,CircuitIn,C1),
+	update_currents(N2,Label,f(N1,N2),-It,C1,C2),
+	update_voltages(N1,N2,Vt,Label,C2,CircuitOut).
+
+/* 
+**	update_currents(+Node,+Label,+FromTo,?Current,+CIn,-COut)
+**		update the information about current flowing to/from nodes
+**		in the current circuit description.
+**
+*/
+
+update_currents(Node,Label,FromTo,Current,[[],Vs],[COut,Vs]):-
+	!,
+	COut=[n(Node,[[FromTo,Label,Current]])].
+update_currents(Node,Label,FromTo,Current,
+	[[n(Node,Is)|Ns],Vs],
+	[[n(Node,[[FromTo,Label,Current]|Is])|Ns],Vs]):-
+	!.
+update_currents(Node,Label,FromTo,Current,
+	[[NN|Ns],VVs],[[NN|UNs],VVs]):-
+	update_currents(Node,Label,FromTo,Current,[Ns,VVs],[UNs,VVs]).
+
+/* 
+**	update_voltages(+N1,+N2,?Vt,+Label,+Cin,-COut)
+**		update the voltage table between nodes N1 and N2 with Vt
+**		If the voltage is already stored as (N2,N1) we invert the
+**		sign of Vt.
+*/
+
+update_voltages(N1,N2,Vt,Label,[Is,[]],[Is,Vs]):-
+	!,
+	Vs=[p(N1,N2,Vt,[Label])].
+update_voltages(N1,N2,Vt,Label,[Is,Vs],[Is,Vos]):-
+	Vs=[p(N1,N2,AV,Ls)|Ps],
+	!,
+	Vos=[p(N1,N2,AV,[Label|Ls])|Ps],
+	Vt=AV.
+update_voltages(N2,N1,Vt,Label,[Is,Vs],[Is,Vos]):-
+	Vs=[p(N1,N2,AV,Ls)|Ps],
+	!,
+	Vos=[p(N1,N2,AV,[Label|Ls])|Ps],
+	AV=(-1)*Vt.
+update_voltages(N1,N2,Vt,Label,[Is,[P1|Ps]],[Is,[P1|NPs]]):-
+	update_voltages(N1,N2,Vt,Label,[Is,Ps],[Is,NPs]).
+
+
+/* 
+**	kirchoff_law1(+NodeInfo)
+**		apply the kirchoff law for currents to the Circuit
+*/
+
+kirchoff_law1([]).
+kirchoff_law1([n(Node,Currents)|Nodes]):-
+	add_currents(Currents,TotalCurrent),
+	TotalCurrent=0//X,
+	kirchoff_law1(Nodes).
+
+add_currents([],0//X):-!.
+add_currents([[_,_,I]|Cs],I+Is):-
+	add_currents(Cs,Is).
+
+/* 
+**	kirchoff_law2(+NodeInfo,Loops)
+**		Apply the kirchoff law for voltages on each loop in Loops
+**		Note that loops must be real loops e.g. [n1,n2,n3,n1]
+*/
+
+kirchoff_law2(VInfo,[]):-!.
+kirchoff_law2(VInfo,[Loop|Loops]):-
+	add_voltages(Loop,VInfo,0//X),
+	kirchoff_law2(VInfo,Loops).
+
+add_voltages([N1,N2],VInfo,Vt):-
+	!,
+	find_voltage(N1,N2,VInfo,Vt).
+add_voltages([N1,N2|Nodes],VInfo,V1+V2):-
+	find_voltage(N1,N2,VInfo,V1),
+	add_voltages([N2|Nodes],VInfo,V2).
+
+find_voltage(_,_,[],0//X):-!. /* really this must be an error */
+find_voltage(N1,N2,[p(N1,N2,V,_)|_],V):-!.
+find_voltage(N2,N1,[p(N1,N2,V,_)|_],(-1)*V):-!.
+find_voltage(N1,N2,[_|VInfo],V):-
+	find_voltage(N1,N2,VInfo,V).
+
+
+/* 
+**	component(+Type,+Chars,?Voltage,?Current)
+**		Describe a component with charactersistics Chars when
+**		the potential between the in and out nodes is Vt and the
+**		current flowing (from in to out node) is It).
+*/
+
+component(ampere_meter,[Reading],Vt,It):-
+	formulae([Reading,Vt,It]),
+	Vt=0//X, /* No drop in voltage*/
+	Reading=It.
+
+component(volt_meter,[Reading],Vt,It):-
+	formulae([Reading,Vt,It]),
+	It=0//X, /* No current flows through voltometer */
+	Reading=Vt.
+
+component(resistor,[R],Vt,It):-
+	real(R),
+	formula(Vt),
+	Vt=R*It.
+component(dc_source,[E],Vt,It):-
+	real(E),
+	formula(Vt),
+	Vt=E//T.	
+component(ac_source,[E,W],Vt,It):-
+	reals([E,W]),
+	formula(Vt),
+	Vt=(E*sin(W*T))//T.
+
+component(inductor,[L],Vt,It):-
+	real(L),
+	formula(Vt),
+	Vt=L*derivative(It).
+	
+component(capacitor,[C],Vt,It):-
+	real(C),
+	formulae([Vt,It]),
+	It=C*derivative(Vt).
+/*	Vt=(1/C)*integral(It). */
