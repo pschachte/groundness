@@ -63,7 +63,12 @@
 %  referred to again, and so should be freed if the current representation
 %  goes in for that kind of thing.
 
-%  ** implemented in C **
+anz_free(_).  % no-op for robdds
+
+%  anz_free_if_unshared(+Analysis1, +Analysis2)
+%  Free Analysis if it does not share with Analysis2, if we do freeing.
+
+anz_free_if_unshared(_, _).  % no-op for robdds
 
 
 %  anz_copy(+Analysis0, -Analysis)
@@ -71,15 +76,14 @@
 %  Analysis0 will not affect Analysis.  For representations which to not
 %  use destructive update, this can be the same as Analysis = Analysis0.
 
-%  ** implemented in C **
+anz_copy(X, X).
 
 
 %  anz_equiv(+Analysis1, +Analysis2)
 %  Analysis1 is identical to Analysis2.  For strongly canonical
 %  representations, this is the same as Analysis1 = Analysis2.
 
-anz_equiv(F, G) :-
-	equiv_test(F, G, 1).
+anz_equiv(F, F).
 
 
 %  anz_top(-Top)
@@ -560,38 +564,5 @@ term representations into more C-appropriate representations:
 
 *****************************************************************/
 
-foreign(max_variable, c, max_variable([-integer])).
-foreign(initRep, c, init_rep).
-foreign(concludeRep, c, conclude_rep).
-foreign(free_rep, c, anz_free(+address)).
-foreign(copy, c, anz_copy(+address, [-address])).
-foreign(equiv, c, equiv_test(+address, +address, [-integer])).
-foreign(trueVar, c, anz_top([-address])).
-foreign(falseVar, c, anz_bottom([-address])).
-foreign(variableRep, c, variable_rep(+integer, [-address])).
-foreign(glb, c, anz_meet(+address, +address, [-address])).
-foreign(lub, c, anz_join(+address, +address, [-address])).
-foreign(implies, c, implies(+address, +address, [-address])).
-foreign(projectThresh, c, project_threshold(+integer, +address, [-address])).
-foreign(projected_glb, c, anz_meet(+integer, +address, +address,
-		[-address])).
-foreign(printOut, c, anz_print(+address)).
-
-foreign(glb_list, c, anz_meet_vars(+term, [-address])).
-foreign(rename_term, c, rename_term(+address, +term, [-address])).
-foreign(reverse_rename_term, c,
-		reverse_rename_term(+address, +term, [-address])).
-foreign(iff_conj_list, c, anz_iffconj(+integer, +term, [-address])).
-foreign(abstract_unify_list, c, bool_abstract_unify(+address, +integer, +term,
-		+integer, [-address])).
-foreign(abstract_exit_term, c, analyze_call(+address, +address, +term,
-		+integer, [-address])).
-foreign(free_rep_if_diff, c, anz_free_if_unshared(+address, +address)).
-
-foreign_file('boolfn.so', [max_variable, initRep, concludeRep, free_rep,
-                copy, equiv, trueVar, falseVar, variableRep, glb,
-                lub, implies, projectThresh, projected_glb, printOut,
-                glb_list, rename_term, reverse_rename_term, iff_conj_list,
-		abstract_unify_list, abstract_exit_term, free_rep_if_diff]).
-
-:- load_foreign_executable('boolfn.so').
+% Load in C ROBDD support code that defines all these predicates.
+:- use_foreign_library(swi_robdd).
