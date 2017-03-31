@@ -125,28 +125,6 @@ more readable.
 			    Command Line Handling
   ======================================================================*/
 
-%  runtime_entry(+Condition)
-%  Main predicate of a Quintus Prolog program.  Condition is 'start' if
-%  program is just starting, or 'abort' if restarting after an abort.
-
-user:runtime_entry(start) :-
-	nogc,
-	(   unix(args(Cmdline)),
-	    Cmdline \== [] ->	
-		default_opt(Opts),
-		analyze_list(Cmdline, Opts)
-	;   usage,
-	    halt(1)
-	).
-
-
-%  goal
-%  This is here only to make the program consistent with the other programs I
-%  analyze.  I don't actually call this.
-
-user:goal :- user:runtime_entry(start).
-
-
 %  anz(List)
 %  Do what runtime_entry(start) does, but take command line as argument.  This
 %  predicate only exists for debugging.
@@ -387,18 +365,18 @@ print_analyses(Preds, Topdown) :-
 	    nl,
 	    write(Spec),
 	    write(' (g.i.):  '),
-	    anal_print(BU),
+	    anz_print(BU),
 	    nl,
 	    (	Topdown == on ->
 		    get_pred_call(Ref, Preds, TD),
 		    write(Spec),
 		    write(' (call):  '),
-		    anal_print(TD),
+		    anz_print(TD),
 		    nl,
 		    write(Spec),
 		    write(' (answ):  '),
-		    anal_meet(TD, BU, Full),
-		    anal_print(Full),
+		    anz_meet(TD, BU, Full),
+		    anz_print(Full),
 		    nl
 	    ;	true
 	    ),

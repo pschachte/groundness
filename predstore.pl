@@ -108,8 +108,8 @@ get_pred_ref(Spec, Store0, N, Store) :-
 	    Store = store(N,Map,Array),
 	    N is N0 + 1,
 	    map_store(Spec, N, Map0, Map),
-	    anal_bottom(F1),
-	    anal_bottom(F2),
+	    anz_bottom(F1),
+	    anz_bottom(F2),
 	    aset(N, Array0,
 		 pred(undefined,0,unprocessed,F1,F2,_,Spec), Array)
 	).
@@ -252,7 +252,7 @@ get_pred_travnum(Ref, store(_,_,Array), Travnum) :-
 put_pred_success(Ref, Success, store(N,Map,Array0),
 		store(N,Map,Array)) :-
 	aref(Ref, Array0, pred(A,B,C,Old,E,F,G)),
-	anal_free_if_unshared(Old, Success),
+	anz_free_if_unshared(Old, Success),
 	aset(Ref, Array0, pred(A,B,C,Success,E,F,G), Array).
 
 
@@ -271,7 +271,7 @@ get_pred_success(Ref, store(_,_,Array), Success) :-
 put_pred_call(Ref, Call, store(N,Map,Array0),
 		store(N,Map,Array)) :-
 	aref(Ref, Array0, pred(A,B,C,D,Old,F,G)),
-	anal_free_if_unshared(Old, Call),
+	anz_free_if_unshared(Old, Call),
 	aset(Ref, Array0, pred(A,B,C,D,Call,F,G), Array).
 
 

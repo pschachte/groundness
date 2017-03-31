@@ -101,7 +101,7 @@ So for now I don't worry about this.
 analyze_single_goal(Goal, Preds0, Preds) :-
 %	simplify_goal(Goal, user, 1, _, Preds0, Preds1, Code),
 	prepare_code(Goal, 0, Preds0, [], _),
-	anal_top(Top),
+	anz_top(Top),
 	propagate_goal_calls(Goal, Top, _, [], Preds0, Preds).
 
 
@@ -166,10 +166,10 @@ analyze_once([Pred|SCC], Preds0, Preds, Changed0, Changed) :-
 		Changed = Changed0,
 		Preds = Preds0
 	;   get_pred_call(Pred, Preds0, Callpat),
-	    anal_copy(Callpat, Callpat1),
+	    anz_copy(Callpat, Callpat1),
 	    analyze_prep(Prep, Callpat1, Callpat2, Preds0, Preds1,
 			 Changed0, Changed1),
-	    anal_free_if_unshared(Callpat2, Callpat1),
+	    anz_free_if_unshared(Callpat2, Callpat1),
 	    analyze_once(SCC, Preds1, Preds, Changed1, Changed)
 	).
 
@@ -187,17 +187,17 @@ analyze_once([Pred|SCC], Preds0, Preds, Changed0, Changed) :-
 analyze_prep(conj_prep(_,Var), Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
 	analyze_conj(Var, Anal0, Anal, Preds0, Preds, Ch0, Ch).
 analyze_prep(disj_prep(_,Var,R), Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
-	anal_bottom(Bottom),
+	anz_bottom(Bottom),
 	analyze_disj(Var, R, Anal0, Bottom, Anal, Preds0, Preds, Ch0, Ch).
-analyze_prep(call_prep(Pred,Call,Anal2,Restriction), Anal0, Anal, Preds0,
+analyze_prep(call_prep(Pred,Call,Anal2,Projection), Anal0, Anal, Preds0,
 		Preds, Ch0, Ch) :-
-	anal_copy(Anal0, Anal1),
-	anal_meet(Anal1, Anal2, Anal3),
+	anz_copy(Anal0, Anal1),
+	anz_meet(Anal1, Anal2, Anal3),
 	analyze_call_pattern(Call, Anal3, Cpat),
 	update_call_pattern(Pred, Cpat, Preds0, Preds, Ch0, Ch),
 	% This is where we rely on our meet operation being commutitive.
 	get_pred_success(Pred, Preds, Success),
-	analyze_call(Anal0, Success, Call, Restriction, Anal).
+	analyze_call(Anal0, Success, Call, Projection, Anal).
 
 
 %  analyze_conj(+Preps, +Analysis0, -Analysis, +Preds0, -Preds, +Changed0,
@@ -216,7 +216,7 @@ analyze_conj([Prep|Preps], Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
 	analyze_conj(Preps, Anal1, Anal, Preds1, Preds, Ch1, Ch).
 
 
-%  analyze_disj(+Preps, +Restriction, +Context, +Analysis0, -Analysis,
+%  analyze_disj(+Preps, +Projection, +Context, +Analysis0, -Analysis,
 %		+Preds0, -Preds, +Changed0, -Changed)
 %  Preds is a predstore identical to Preds0, except that all predicates in it
 %  that are specified in Preps, a list of prep terms, have had their call
@@ -227,15 +227,15 @@ analyze_conj([Prep|Preps], Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
 %  Preps gets a new call pattern due to this analysis.
 
 analyze_disj([], R, _, Anal0, Anal, Preds, Preds, Ch, Ch) :-
-	anal_restrict(Anal0, R, Anal).
+	anz_project(Anal0, R, Anal).
 analyze_disj([Prep|Preps], R, Context, Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
-	anal_copy(Context, Context1),
+	anz_copy(Context, Context1),
 	analyze_prep(Prep, Context1, Anal1, Preds0, Preds1, Ch0, Ch1),
 	(   Preps == [] ->
 		Preds = Preds1,
 		Ch = Ch1,
-		anal_join(Anal0, Anal1, R, Anal)
-	;   anal_join(Anal0, Anal1, Anal2),
+		anz_join(Anal0, Anal1, R, Anal)
+	;   anz_join(Anal0, Anal1, Anal2),
 	    analyze_disj(Preps, R, Context, Anal2, Anal, Preds1, Preds, Ch1,
 			 Ch)
 	).
@@ -249,12 +249,12 @@ analyze_disj([Prep|Preps], R, Context, Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
 
 update_call_pattern(Pred, Callpat, Preds0, Preds, Changed0, Changed) :-
 	get_pred_call(Pred, Preds0, Callpat0),
-	anal_copy(Callpat0, Callpat1),
-	anal_join(Callpat1, Callpat, Callpat2),
+	anz_copy(Callpat0, Callpat1),
+	anz_join(Callpat1, Callpat, Callpat2),
 	(   Changed0 == true ->
 		Changed = Changed0,
 		put_pred_call(Pred, Callpat2, Preds0, Preds)
-	;   anal_equiv(Callpat0, Callpat2) ->
+	;   anz_equiv(Callpat0, Callpat2) ->
 		Changed = Changed0,
 		Preds = Preds0
 	;   Changed = true,
@@ -302,7 +302,7 @@ propagate_call_patterns([], _, Preds, Preds).
 propagate_call_patterns([Pred|List], SCC, Preds0, Preds) :-
 	get_pred_call(Pred, Preds0, Callpat),
 	get_pred_code(Pred, Preds0, Code),
-	anal_copy(Callpat, Callpat1),
+	anz_copy(Callpat, Callpat1),
 	propagate_goal_calls(Code, Callpat1, _, SCC, Preds0, Preds1),
 	propagate_call_patterns(List, SCC, Preds1, Preds).
 
@@ -326,19 +326,19 @@ propagate_goal_calls(call(P,T,A,R), Callpat, Exitpat, SCC, Preds0, Preds) :-
 	;   % non-recursive call:  meet current call pattern with existing
 	    % analysis to determine actual call pattern, and update Preds.
 	    % Note:  here we rely on meet being commutative.
-	    anal_copy(Callpat, Exitpat),
-	    anal_meet(Callpat, A, Context),
+	    anz_copy(Callpat, Exitpat),
+	    anz_meet(Callpat, A, Context),
 	    analyze_call_pattern(T, Context, Actualcall),
 	    simple_update_call_pattern(P, Actualcall, Preds0, Preds)
 	).
 propagate_goal_calls(!, Exitpat, Exitpat, _, Preds, Preds).
 propagate_goal_calls(disj(Goals), Callpat, Exitpat, SCC, Preds0, Preds) :-
-	anal_bottom(Bottom),
+	anz_bottom(Bottom),
 	propagate_disj_calls(Goals, Callpat, Bottom, Exitpat, SCC, Preds0,
 			     Preds).
 propagate_goal_calls(if_then_else(G1,G2,G3), Callpat, Exitpat, SCC, Preds0,
 		Preds) :-
-	anal_bottom(Bottom),
+	anz_bottom(Bottom),
 	propagate_disj_calls([conj([G1,G2]),G3],Callpat, Bottom, Exitpat, SCC,
 			     Preds0, Preds).
 
@@ -357,9 +357,9 @@ propagate_conj_calls([Goal|Goals], Callpat, Exitpat, SCC, Preds0, Preds) :-
 propagate_disj_calls([], _, Exitpat, Exitpat, _, Preds, Preds).
 propagate_disj_calls([Goal|Goals], Context, Callpat, Exitpat, SCC, Preds0,
 		Preds) :-
-	anal_copy(Context, Context1),
+	anz_copy(Context, Context1),
 	propagate_goal_calls(Goal, Context1, Exitpat1, SCC, Preds0, Preds1),
-	anal_join(Callpat, Exitpat1, Callpat1),
+	anz_join(Callpat, Exitpat1, Callpat1),
 	propagate_disj_calls(Goals, Context, Callpat1, Exitpat, SCC, Preds1,
 			     Preds).
 
@@ -371,6 +371,6 @@ propagate_disj_calls([Goal|Goals], Context, Callpat, Exitpat, SCC, Preds0,
 
 simple_update_call_pattern(Pred, Callpat, Preds0, Preds) :-
 	get_pred_call(Pred, Preds0, Callpat0),
-	anal_copy(Callpat0, Callpat1),
-	anal_join(Callpat1, Callpat, Callpat2),
+	anz_copy(Callpat0, Callpat1),
+	anz_join(Callpat1, Callpat, Callpat2),
 	put_pred_call(Pred, Callpat2, Preds0, Preds).

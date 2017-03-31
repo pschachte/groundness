@@ -658,7 +658,7 @@ simplify_goal_1(Goal, Mod, R, V0, V, Preds0, Preds, Simples, Simples0) :-
 %  This is a bit tricky.  When simplifying a conjunction X,Y we simplify Y
 %  first, and then X, so that earlier goals will get higher variable numbers.
 %  For a disjunction X;Y it doesn't matter in what order we number them, because
-%  we restrict each disjunct to the same threshold:  namely, the variable
+%  we project each disjunct to the same threshold:  namely, the variable
 %  number at the beginning of the whole disjunction.  In order for this to
 %  work, though, we must be sure to number goals conjoined both before and
 %  after the disjunction before numbering the disjunction itself.  This is

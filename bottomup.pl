@@ -110,17 +110,17 @@ analyze_once([Pred|SCC], Preds0, Preds, Changed0, Changed) :-
 	(   Prep = fixed(_) ->			% nonrecursive:  do no more!
 		Changed = Changed0,
 		Preds = Preds0
-	;   anal_top(Top),
+	;   anz_top(Top),
 	    analyze_prep(Prep, Preds0, Top, Anal1),
 	    (   Changed0 == true ->
 		    put_pred_success(Pred, Anal1, Preds0, Preds1),
 		    Changed1 = true		% don't compare graphs if
 						% we've already found a change
 	    ;   get_pred_success(Pred, Preds0, Anal0),
-		anal_equiv(Anal0, Anal1) ->	% are graphs are the same?
+		anz_equiv(Anal0, Anal1) ->	% are graphs are the same?
 		    Preds1 = Preds0,		% yes:  no need to update Preds
 		    Changed1 = false,
-		    anal_free_if_unshared(Anal1, Anal0)
+		    anz_free_if_unshared(Anal1, Anal0)
 	    ;	put_pred_success(Pred, Anal1, Preds0, Preds1),
 		Changed1 = true
 	    ),
@@ -135,12 +135,12 @@ analyze_once([Pred|SCC], Preds0, Preds, Changed0, Changed) :-
 %  not be 'fixed'(_), as we have dealt with that case earlier.
 
 analyze_prep(conj_prep(Fixed,Var), Preds, Anal0, Anal) :-
-	anal_meet(Anal0, Fixed, Anal1),
+	anz_meet(Anal0, Fixed, Anal1),
 	analyze_conj(Var, Preds, Anal1, Anal).
 analyze_prep(disj_prep(Fixed0,Var,Restriction), Preds, Anal0, Anal) :-
-	anal_copy(Fixed0, Fixed),
+	anz_copy(Fixed0, Fixed),
 	analyze_disj(Var, Preds, Fixed, Anal1),
-	anal_meet(Restriction, Anal0, Anal1, Anal).
+	anz_meet(Restriction, Anal0, Anal1, Anal).
 analyze_prep(call_prep(Pred,Call,_,Restriction), Preds, Anal0, Anal) :-
 	get_pred_success(Pred, Preds, Success),
 	analyze_call(Anal0, Success, Call, Restriction, Anal).
@@ -164,8 +164,8 @@ analyze_conj([Prep|Preps], Preds, Anal0, Anal) :-
 
 analyze_disj([], _, Anal, Anal).
 analyze_disj([Prep|Preps], Preds, Anal0, Anal) :-
-	anal_top(Top),
+	anz_top(Top),
 	analyze_prep(Prep, Preds, Top, Anal1),
-	anal_join(Anal0, Anal1, Anal2),
+	anz_join(Anal0, Anal1, Anal2),
 	analyze_disj(Preps, Preds, Anal2, Anal).
 

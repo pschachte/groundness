@@ -28,8 +28,8 @@
 
 
 %  TODO:  use 0 instead of 'none'.  Should work but needs careful testing.
-%  This would allow me to use max/3 instead of choose_restriction/3,
-%  choose_restriction_limit/3, and rlimit_max/3.
+%  This would allow me to use max/3 instead of choose_projection/3,
+%  choose_projection_limit/3, and rlimit_max/3.
 
 
 /*****************************************************************
@@ -57,7 +57,7 @@ A compound prep is one of:
     'disj_prep'(*A,V,R*)
 			which describes a disjjunction, where *A* is
 			the non-recursive part of the analysis, *V* is the
-			recursive part, and *R* is the restriction threshold
+			recursive part, and *R* is the projection threshold
 			(i.e., the lowest numbered variable not appearing
 			later in the code); or
     'call_prep'(*P,T,A,R*)
@@ -65,14 +65,14 @@ A compound prep is one of:
 			is the predicate ref of the predicate being
 			called, *T* is the call term, *A* is the
 			analysis of the calls up to this one, and *R*
-			is the restriction threshold.
+			is the projection threshold.
 --description
 
-The *Restriction* terms above apply only *after* conjunction with the left
+The *Projection* terms above apply only *after* conjunction with the left
 context of the prep term, i.e. the glb of the analyses of the preceding prep
 terms.  For example, in the evaluation of a 'disj_prep' term, the lub of *A*
 and the analyses of the elements of *V* are first meeted with the the left
-context, and then variables numbered greater or equal to *R* are restricted
+context, and then variables numbered greater or equal to *R* are projected
 away.
 
 ****************************************************************/
@@ -102,7 +102,7 @@ prepare_scc([Ref|Refs], Preds0, Preds, SCC) :-
 		% changed predicates.  Then we would need to repeat the
 		% top-down analysis starting with predicates that call the
 		% changed predicates.
-		anal_top(T),
+		anz_top(T),
 		Prep = fixed(T)
 	;   get_pred_code(Ref, Preds0, Code),
 	    prepare_code(Code, Arity, Preds0, SCC, Prep)
@@ -124,29 +124,29 @@ prepare_code(undefined, _, _, _, fixed(T)) :-
 	% succeed.  The trouble with making it bottom is that we wouldn't do a
 	% very good job analyzing programs that use builtin predicates the
 	% analyzer doesn't know about.
-	anal_top(T).				
+	anz_top(T).				
 prepare_code(foreign(Foreignspec), _, _, _, fixed(Fixed)) :-
 	!,
 	analyze_foreign(Foreignspec, Fixed).
 prepare_code(Code, Arity, Preds, SCC, Prep) :-
-	anal_top(Top),
-	anal_bottom(Bottom),
+	anz_top(Top),
+	anz_bottom(Bottom),
 	% could just call prepare_1_conj, but that will usually get around to
 	% making the following call, anyway:
 	prepare_1_disj(Code, Preds, SCC, none, _, 999999, _, Arity, Top,
 		       Bottom, Fixed, Var, []),
 	(   Var == [] ->
 		Prep = fixed(Fixed)
-	% This won't handle all cases, as anal_bottom isn't meant to test if an
+	% This won't handle all cases, as anz_bottom isn't meant to test if an
 	% analysis is top, only to generate *an instance* of top.  Still, it
 	% will often work, and is better than nothing.
  	;   Var = [Single],
- 	    anal_bottom(Bottom2),
-	    anal_equiv(Bottom2, Fixed) ->
+ 	    anz_bottom(Bottom2),
+	    anz_equiv(Bottom2, Fixed) ->
  		Prep = Single
 	;   Var = [Elt|_],
-	    prep_restriction(Elt, Restriction),
-	    Prep = disj_prep(Fixed,Var,Restriction)
+	    prep_projection(Elt, Projection),
+	    Prep = disj_prep(Fixed,Var,Projection)
 	).
 
 
@@ -159,9 +159,9 @@ prepare_code(Code, Arity, Preds, SCC, Prep) :-
 %  predicate references of all the predicates in the same SCC as the predicate
 %  being examined.  Var is basically a list of the recursive goals on Gs, and
 %  Fixed is the glb of analyses of all the rest.  Rlim is Rlim0 unless Rlim0
-%  is 'none', in which case it is the restriction threshold for the last goal
+%  is 'none', in which case it is the projection threshold for the last goal
 %  in Gs before the first recursive call, or 'none' if there are no recursive
-%  calls.  Rlast is restriction threshold of the last goal in Gs and Rlast0 is
+%  calls.  Rlast is projection threshold of the last goal in Gs and Rlast0 is
 %  the threshold for the last goal before Gs.  Rnext0 is the threshold for the
 %  last goal in Gs before the first recursive goal, or Rnext if there are no
 %  recursive goals, and Rnext is the threshold to be used for the prep term
@@ -192,37 +192,37 @@ prepare_1_conj(conj(Goals), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, Rnext0,
 		     Rnext, Fixed0, Fixed, Var, Var0).
 prepare_1_conj(equal(V,T,Vs,Fixed0,R), _, _, Rlim, Rlim, _, R, Rnext, Rnext,
 		Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	analyze_unif(V, T, Vs, Restriction, Fixed0, Fixed).
+	choose_projection(Rlim, R, Projection),
+	analyze_unif(V, T, Vs, Projection, Fixed0, Fixed).
 prepare_1_conj(eval(V,T,Vs,Fixed0,R), _, _, Rlim, Rlim, _, R, Rnext, Rnext,
 		Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	analyze_eval(V, T, Vs, Restriction, Fixed0, Fixed).
+	choose_projection(Rlim, R, Projection),
+	analyze_eval(V, T, Vs, Projection, Fixed0, Fixed).
 prepare_1_conj(builtin(T,Fixed0,R), _, _, Rlim, Rlim, _, R, Rnext, Rnext,
 		Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	analyze_builtin(T, Restriction, Fixed0, Fixed).
+	choose_projection(Rlim, R, Projection),
+	analyze_builtin(T, Projection, Fixed0, Fixed).
 prepare_1_conj(call(P,T,Fixed1,R), Preds, SCC, Rlim0, Rlim, Rlast0, R,
 		Rnext0, Rnext, Fixed0, Fixed, Var, Var0) :-
-	anal_copy(Fixed0, Fixed1),
+	anz_copy(Fixed0, Fixed1),
 	(   member(P, SCC) ->			% it's a recursive call
 		Var = [call_prep(P,T,Fixed1,Rnext)|Var0],
 		Fixed = Fixed0,
 		Rnext0 = Rlast0,
-		choose_restriction_limit(Rlim0, Rlast0, Rlim)
+		choose_projection_limit(Rlim0, Rlast0, Rlim)
 	;   Rlim = Rlim0,			% non-recursive call
 	    Var = Var0,
 	    Rnext = Rnext0,
-	    choose_restriction(Rlim, R, Restriction),
+	    choose_projection(Rlim, R, Projection),
 	    get_pred_success(P, Preds, Success),
-	    analyze_call(Fixed0, Success, T, Restriction, Fixed)
+	    analyze_call(Fixed0, Success, T, Projection, Fixed)
 	).
 prepare_1_conj(!, _, _, Rlim, Rlim, Rlast, Rlast, Rnext, Rnext, Fixed, Fixed,
 		Var, Var).
 prepare_1_conj(disj(Ds), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, Rnext0,
 		Rnext, Fixed0, Fixed, Var, Var0) :-
-	anal_bottom(Bottom),
-	choose_restriction(Rlim0, Rlast0, Rnext1),
+	anz_bottom(Bottom),
+	choose_projection(Rlim0, Rlast0, Rnext1),
 	prepare_disj(Ds, Preds, SCC, Rlim0, Rlim0, Rlim, Rlast0, 0, Rlast,
 		     Rnext1, Fixed0, Bottom, Fixed1, Var1, []),
 	(   Var1 == [] ->
@@ -231,8 +231,8 @@ prepare_1_conj(disj(Ds), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, Rnext0,
 		Fixed = Fixed1
 % I don't think this code is right!!!!
 % 	;   Var1 = [conj_prep(Fixed2,Var2)] ->
-% 		anal_meet(Fixed0, Fixed1, Fixed1a),
-% 		anal_meet(Fixed1a, Fixed2, Fixed),
+% 		anz_meet(Fixed0, Fixed1, Fixed1a),
+% 		anz_meet(Fixed1a, Fixed2, Fixed),
 % 		append(Var2, Var0, Var)
 	;   Fixed = Fixed0,
 	    Rnext0 = Rlast0,
@@ -256,9 +256,9 @@ prepare_1_conj(if_then_else(G1,G2,G3), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast,
 %  and SCC is a list of the predicate references of all the predicates in the
 %  same SCC as the predicate being examined.  Var is basically a list of the
 %  recursive goals on Gs, and Fixed is the lub of analyses of all the rest.
-%  Rlim is the maximum of Rlim0 and the restriction thresholds for all the
+%  Rlim is the maximum of Rlim0 and the projection thresholds for all the
 %  goals in Gs, or 'none' if there are no recursive calls.  Rlimctxt is the
-%  restriction limit to apply to each disjunct.  Rlast is restriction
+%  projection limit to apply to each disjunct.  Rlast is projection
 %  threshold of the last goal in each disjunct in Gs and Rlastctst is the
 %  threshold for the last goal before Gs.  The Rlast for most disjuncts will
 %  be the same, but a disjunct with only a cut won't get it right, so we take
@@ -287,16 +287,16 @@ prepare_disj([D|Ds], Preds, SCC, Rlimctxt, Rlim0, Rlim, Rlastctxt, Rlast0,
 % 		Fixed, Var, Var).
 prepare_1_disj(conj(Goals), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, Rnext,
 		Context, Fixed0, Fixed, Var, Var0) :-
-	anal_copy(Context, Context1),
+	anz_copy(Context, Context1),
 	prepare_conj(Goals, Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, _, Rnext,
 		     Context1, Fixed1, Var1, []),
 	(   Var1 == [] ->
-		anal_join(Fixed0, Fixed1, Fixed),
+		anz_join(Fixed0, Fixed1, Fixed),
 		Var = Var0
 % I don't think this code is right!!!!
 % 	;   Var1 = [disj_prep(Fixed2,Var2,_)] ->
-% 		anal_join(Fixed0, Fixed1, Fixed1a),
-% 		anal_join(Fixed1a, Fixed2, Fixed),
+% 		anz_join(Fixed0, Fixed1, Fixed1a),
+% 		anz_join(Fixed1a, Fixed2, Fixed),
 % 		append(Var2, Var0, Var)
 	;   Fixed = Fixed0,			% has a variable part, so
 						% fixed part doesn't
@@ -305,35 +305,35 @@ prepare_1_disj(conj(Goals), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast, Rnext,
 	).
 prepare_1_disj(equal(V,T,Vs,Context,R), _, _, Rlim, Rlim, _, R, _,
 		Context, Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	anal_copy(Context, Context1),
-	analyze_unif(V, T, Vs, Restriction, Context1, Fixed1),
-	anal_join(Fixed0, Fixed1, Fixed).
+	choose_projection(Rlim, R, Projection),
+	anz_copy(Context, Context1),
+	analyze_unif(V, T, Vs, Projection, Context1, Fixed1),
+	anz_join(Fixed0, Fixed1, Fixed).
 prepare_1_disj(eval(V,T,Vs,Context,R), _, _, Rlim, Rlim, _, R, _,
 		Context, Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	anal_copy(Context, Context1),
-	analyze_eval(V, T, Vs, Restriction, Context1, Fixed1),
-	anal_join(Fixed0, Fixed1, Fixed).
+	choose_projection(Rlim, R, Projection),
+	anz_copy(Context, Context1),
+	analyze_eval(V, T, Vs, Projection, Context1, Fixed1),
+	anz_join(Fixed0, Fixed1, Fixed).
 prepare_1_disj(builtin(T,Context,R), _, _, Rlim, Rlim, _, R, _,
 		Context, Fixed0, Fixed, Var, Var) :-
-	choose_restriction(Rlim, R, Restriction),
-	anal_copy(Context, Context1),
-	analyze_builtin(T, Restriction, Context1, Fixed1),
-	anal_join(Fixed0, Fixed1, Fixed).
+	choose_projection(Rlim, R, Projection),
+	anz_copy(Context, Context1),
+	analyze_builtin(T, Projection, Context1, Fixed1),
+	anz_join(Fixed0, Fixed1, Fixed).
 prepare_1_disj(call(P,T,Context,R), Preds, SCC, Rlim0, Rlim, Rlast0, R, _,
 		Context, Fixed0, Fixed, Var, Var0) :-
 	(   member(P, SCC) ->			% it's a recursive call
 		Var = [call_prep(P,T,Context,Rlim)|Var0],
 		Fixed = Fixed0,
-		choose_restriction_limit(Rlim0, Rlast0, Rlim)
+		choose_projection_limit(Rlim0, Rlast0, Rlim)
 	;   Rlim = Rlim0,
 	    Var = Var0,
-	    choose_restriction(Rlim, R, Restriction),
-	    anal_copy(Context, Context1),
+	    choose_projection(Rlim, R, Projection),
+	    anz_copy(Context, Context1),
 	    get_pred_success(P, Preds, Success),
-	    analyze_call(Context1, Success, T, Restriction, Fixed1),
-	    anal_join(Fixed0, Fixed1, Fixed)
+	    analyze_call(Context1, Success, T, Projection, Fixed1),
+	    anz_join(Fixed0, Fixed1, Fixed)
 	).
 prepare_1_disj(!, _, _, Rlim, Rlim, Rlast, Rlast, _, _, Fixed, Fixed, Var,
 		Var).
@@ -351,22 +351,22 @@ prepare_1_disj(if_then_else(G1,G2,G3), Preds, SCC, Rlim0, Rlim, Rlast0, Rlast,
 	max(Rlast1, Rlast2, Rlast).
 
 
-%  choose_restriction(+Rlimit0, +R, -Restriction)
+%  choose_projection(+Rlimit0, +R, -Projection)
 
-choose_restriction(none, Restriction, Restriction) :-
+choose_projection(none, Projection, Projection) :-
 	!.
-choose_restriction(Restriction, _, Restriction).
+choose_projection(Projection, _, Projection).
 	
 
-%  choose_restriction_limit(+Rlim0, +Rlast, -Rlim)
+%  choose_projection_limit(+Rlim0, +Rlast, -Rlim)
 
-choose_restriction_limit(none, Rlast, Rlast) :-
+choose_projection_limit(none, Rlast, Rlast) :-
 	!.
-choose_restriction_limit(Rlim, _, Rlim).
+choose_projection_limit(Rlim, _, Rlim).
 
 
 %  rlimit_max(+Limit0, +Limit1, -Limit)
-%  Limit is the maximum restriction limit of Limit0 and Limit1.  Note that
+%  Limit is the maximum projection limit of Limit0 and Limit1.  Note that
 %  either or both of these may be 'none', which we treat like -infinity.
 
 rlimit_max(none, Limit, Limit) :-
@@ -378,35 +378,35 @@ rlimit_max(Limit0, Limit1, Limit) :-
 	).
 
 
-%  prep_fixed_part(+Prep, +Restriction, -Fixed)
-%  Fixed is the fixed part of Prep, a prep term, restricted to variables less
-%  than Restriction.
+%  prep_fixed_part(+Prep, +Projection, -Fixed)
+%  Fixed is the fixed part of Prep, a prep term, projected to variables less
+%  than Projection.
 
 prep_fixed_part(fixed(Fixed), _, Fixed).
-prep_fixed_part(conj_prep(Fixed0,Var), Restriction, Fixed) :-
-	anal_copy(Fixed0, Fixed1),
+prep_fixed_part(conj_prep(Fixed0,Var), Projection, Fixed) :-
+	anz_copy(Fixed0, Fixed1),
 	prep_list_fixed_part(Var, Fixed1, Fixed2),
-	anal_restrict(Fixed2, Restriction, Fixed).
+	anz_project(Fixed2, Projection, Fixed).
 prep_fixed_part(disj_prep(Fixed,_,_), _, Fixed).
 prep_fixed_part(call_prep(_,_,_,_), _, Bottom) :-
-	anal_bottom(Bottom).
+	anz_bottom(Bottom).
 
 
 prep_list_fixed_part([], Fixed, Fixed).
 prep_list_fixed_part([Prep|Preps], Fixed0, Fixed) :-
 	prep_fixed_part(Prep, 999999, Fixed1),
-	anal_meet(Fixed0, Fixed1, Fixed2),
+	anz_meet(Fixed0, Fixed1, Fixed2),
 	prep_list_fixed_part(Preps, Fixed2, Fixed).
 
 
-%  prep_restriction(+Prep, -Restriction)
-%  Restriction is the restriction threshold for prep term Prep.
+%  prep_projection(+Prep, -Projection)
+%  Projection is the projection threshold for prep term Prep.
 
-prep_restriction(conj_prep(_,Var), Restriction) :-
+prep_projection(conj_prep(_,Var), Projection) :-
 	last(Var, Last),
-	prep_restriction(Last, Restriction).
-prep_restriction(disj_prep(_,_,Restriction), Restriction).
-prep_restriction(call_prep(_,_,_,Restriction), Restriction).
+	prep_projection(Last, Projection).
+prep_projection(disj_prep(_,_,Projection), Projection).
+prep_projection(call_prep(_,_,_,Projection), Projection).
 
 
 %  last(+List, -Last)
