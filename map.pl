@@ -3,10 +3,11 @@
 %  Author   : Peter Schachte
 %  Origin   : Mon Aug 11 17:09:41 2003
 %  Purpose  : Implement finite maps using balanced trees
-%  Copyright: © 2004 Peter Schachte.  All rights reserved.
+%  Copyright: (c) 2004 Peter Schachte.  All rights reserved.
 
 
 :- module(map, [ map_empty/1,		% the empty map
+		 map_cardinality/2,	% the number of mappings in a map
 		 map_member/3,		% backtrack over mappings
 		 map_search/3,		% find a mapping with key == to the
 					% the key being sought
@@ -18,7 +19,7 @@
 		 map_delete/3,		% remove mapping if it's there
 		 map_replace/4,		% replace an existing mapping, or fail
 		 map_replace/5,		% replace an existing mapping, or fail
-		 map_replace/6,		% replace an existing mapping, or fail
+		 map_replace/6,		% replace an existing mapping or insert
 		 map_remove_largest/4,	% remove and return largest key
 		 map_remove_smallest/4,	% remove and return smallest key
 		 map_iterator/2,	% term allowing iteration over map
@@ -32,6 +33,7 @@
 
 	% Implementation of sets as maps
 		 set_empty/1,		% the empty set
+		 set_cardinality/2,	% the number of elements in a set
 		 set_search/2,		% membership test using ==
 		 set_member/2,		% backtrack over set members
 		 set_insert/3,		% add element to set
@@ -77,6 +79,23 @@ We maintain the invariant -1 =< Balance =< 1.
 %  Empty is an empty map.
 
 map_empty(empty_map).
+
+
+/****************************************************************
+			      Map Cardinality
+****************************************************************/
+
+%  map_cardinality(+Map, -Cardinality)
+%  Cardinality is the number of key->value pairs in Map.
+
+map_cardinality(Map, Cardinality) :-
+        map_cardinality(Map, 0, Cardinality).
+
+map_cardinality(empty_map, Cardinality, Cardinality).
+map_cardinality(map(_, L, _, _, R), Cardinality0, Cardinality) :-
+        Cardinality1 is Cardinality0 + 1,
+        map_cardinality(L, Cardinality1, Cardinality2),
+        map_cardinality(R, Cardinality2, Cardinality).
 
 
 /****************************************************************
@@ -467,7 +486,7 @@ map_remove1((<), Key, Value, B0, map(B1, L1, K1, V1, R1), K0, V0, R0, M, S) :-
 	rotate_if_needed(B2, M1, K0, V0, R0, B, L, K, V, R, S1, S),
 	node(B, L, K, V, R, M).
 %	M = map(B, L, K, V, R).
-map_remove1((=), _, Value, B0, L0, K0, Value, R0, M, S) :-
+map_remove1((=), _, Value, B0, L0, _K0, Value, R0, M, S) :-
 %  check_balanced(map(B0,L0,K0,Value,R0)),
 	map_remove_root(B0, L0, R0, M, S).
 map_remove1((>), Key, Value, B0, L0, K0, V0, map(B1, L1, K1, V1, R1), M, S) :-
@@ -678,9 +697,11 @@ map_next1(map(_,L,_,_,_), Map0, Iter0, K, V, Iter) :-
 	map_next1(L, L, iter2(Map0,Iter0), K, V, Iter).
 
 
+
 %  map_map(+Map0, +Closure, -Map)
 %  Map is Map0 with Closure(Key, Val0, Val) called for every Key -> Val0
 %  mapping in Map0 and Val0 then replaced with Val.
+:- meta_predicate map:map_map(*,3,*).
 
 map_map(empty_map, _, empty_map).
 map_map(map(B,L0,K,V0,R0), Closure, map(B,L,K,V,R)) :-
@@ -696,6 +717,7 @@ map_map(map(B,L0,K,V0,R0), Closure, map(B,L,K,V,R)) :-
 %
 %  The best way I can see to do this is to turn the two trees into lists,
 %  merge them, and turn the result into a map.
+:- meta_predicate map:map_union(*,*,4,*).
 
 map_union(Map0, Map1, Closure, Map) :-
 	map_to_list(Map0, List0, []),
@@ -705,15 +727,18 @@ map_union(Map0, Map1, Closure, Map) :-
 	sorted_list_to_map(Len, List, [], _, Map).
 
 
+:- meta_predicate map:union_alists(*,*,4,*).
 union_alists([], List, _, List).
 union_alists([K-V|List0], List1, Closure, List) :-
 	union_alists1(List1, K, V, List0, Closure, List).
 
+:- meta_predicate map:union_alists1(*,?,?,*,4,*).
 union_alists1([], K0, V0, List0, _, [K0-V0|List0]).
 union_alists1([K1-V1|List1], K0, V0, List0, Closure, List) :-
 	compare(C, K0, K1),
 	union_alists2(C, K0, K1, V0, V1, List0, List1, Closure, List).
 
+:- meta_predicate map:union_alists2(*,?,*,?,?,*,*,4,*).
 union_alists2((<), K0, K1, V0, V1, List0, List1, Closure, [K0-V0|List]) :-
 	union_alists1(List0, K1, V1, List1, Closure, List).
 union_alists2((=), K, _, V0, V1, List0, List1, Closure, [K-V|List]) :-
@@ -731,6 +756,7 @@ union_alists2((>), K0, K1, V0, V1, List0, List1, Closure, [K1-V1|List]) :-
 %  The best way I can see to do this is to turn the two trees into lists,
 %  merge them, and turn the result into a map.
 
+:- meta_predicate map:map_intersection(*,*,4,*).
 map_intersection(Map0, Map1, Closure, Map) :-
 	map_to_list(Map0, List0, []),
 	map_to_list(Map1, List1, []),
@@ -738,15 +764,18 @@ map_intersection(Map0, Map1, Closure, Map) :-
 	length(List, Len),
 	sorted_list_to_map(Len, List, [], _, Map).
 
+:- meta_predicate map:intersect_alists(*,*,4,*).
 intersect_alists([], _, _, []).
 intersect_alists([K-V|List0], List1, Closure, List) :-
 	intersect_alists1(List1, K, V, List0, Closure, List).
 
+:- meta_predicate map:intersect_alists1(*,?,?,*,4,*).
 intersect_alists1([], _, _, _, _, []).
 intersect_alists1([K1-V1|List1], K0, V0, List0, Closure, List) :-
 	compare(C, K0, K1),
 	intersect_alists2(C, K0, K1, V0, V1, List0, List1, Closure, List).
 
+:- meta_predicate map:intersect_alists2(*,?,*,?,?,*,*,4,*).
 intersect_alists2((<), _K0, K1, _V0, V1, List0, List1, Closure, List) :-
 	intersect_alists1(List0, K1, V1, List1, Closure, List).
 intersect_alists2((=), K, _, V0, V1, List0, List1, Closure, [K-V|List]) :-
@@ -800,6 +829,9 @@ user:portray(map(B,L,K,V,R)) :-
 
 set_empty(Set) :-
 	map_empty(Set).
+
+set_cardinality(Set, Cardinality) :-
+        map_cardinality(Set, Cardinality).
 
 set_search(Set, Elt) :-
 	map_search(Set, Elt, _).

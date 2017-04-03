@@ -16,8 +16,9 @@
    ]).
 
 :- ensure_loaded(builtins).
-:- ensure_loaded(analysis).			% for max_variable/1
-:- ensure_loaded(misc).				% for max/3
+:- ensure_loaded(analysis).	% for max_variable/1
+:- ensure_loaded(misc).		% for max/3
+:- ensure_loaded(map).		% for map_empty/1, map_fetch/3, map_store/3
 
 /************************************************************************
 
@@ -131,9 +132,7 @@ number when we see the first clause for or call to the predicate.
 ************************************************************************/
 
 
-:- ensure_loaded(mymaps).
 :- ensure_loaded(predstore).
-:- ensure_loaded(library(basics)).
 
 
 %  file_contents(+File, -Preds, -Maxvars, -Totvars)
@@ -743,7 +742,7 @@ simplify_unification(X, Y, R, V0, V, Simples, Simples0) :-
 		Simples = [equal(V1,T,Vs,_,R)|Simples0],
 		numbered_object_var(Y, V0, V1),
 		term_descr(X, V1, V, T, Vs)
-	;   object_var(Y, N) ->
+	;   object_var(Y, _N) ->
 		Simples = [equal(V,T,Vs,_,R)|Simples0],
 		term_descr(X, V0, V, T, Vs)
 	;   functor(X, Name, Arity),

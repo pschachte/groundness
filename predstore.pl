@@ -36,16 +36,13 @@
 	print_goal/2
    ]).
 
-
-%  :- use_module(library(logarr)).		% use array code from library
 :- use_module(analysis).			% for analysis domain stuff
-:- use_module(logarr).				% use my array code
-:- use_module(mymaps).				% and my maps code
+:- use_module(map).				% and my maps code
 
 /****************************************************************
 		       Predicate Stores and References
 
-This implementation of a predicate store contains three parts:
+This implementation of a predicate store  three parts:
 ++enumerate
     1.  a mapping from predicate spec (Module:Name/Arity term) to predicate
 	reference, which is just a number;
@@ -61,31 +58,31 @@ bit more efficient.
 %  empty_predstore(-Empty)
 %  Empty is an empty predicate store.
 
-empty_predstore(store(0,Map,Array)) :-
-	map_empty(Map),
-	new_array(Array).
+empty_predstore(Map) :-
+	map_empty(Map).
 
 
 %  predstore_first(+Store, -Cursor)
 %  Cursor is a term that can be used to enumerate all the predicate references
 %  in a predicate store.
 
-predstore_first(store(N,_,_), N).
+predstore_first(Map, Cursor) :-
+        map_iterator(Map, Cursor).
 
 
 %  predstore_next(+Store, +Cursor0, -Predref, -Cursor)
 %  Predref is the predicate reference for a predicate in Store at position
 %  Cursor, and Cursor is the position of the following predicate reference.
 
-predstore_next(_, Cursor0, Cursor0, Cursor) :-
-	Cursor0 > 0,
-	Cursor is Cursor0 - 1.
+predstore_next(_, Cursor0, Predref, Cursor) :-
+	map_next(Cursor0, Predref, _, Cursor).
 
 
 %  predstore_size(+Store, -Size)
 %  Predstore Store contains Size predicates.
 
-predstore_size(store(Size,_,_), Size).
+predstore_size(Mapping, Size) :-
+        map_cardinality(Mapping, Size).
 
 
 %  get_pred_ref(+Spec, +Store0, -Ref, -Store)
@@ -101,18 +98,7 @@ get_pred_ref(Name/Arity, Mod, Store0, Ref, Store) :-
 	get_pred_ref(Mod:Name/Arity, Store0, Ref, Store).
 
 
-get_pred_ref(Spec, Store0, N, Store) :-
-	(   get_old_pred_ref(Spec, Store0, N) ->
-		Store = Store0
-	;   Store0 = store(N0,Map0,Array0),
-	    Store = store(N,Map,Array),
-	    N is N0 + 1,
-	    map_store(Spec, N, Map0, Map),
-	    anz_bottom(F1),
-	    anz_bottom(F2),
-	    aset(N, Array0,
-		 pred(undefined,0,unprocessed,F1,F2,_,Spec), Array)
-	).
+get_pred_ref(Spec, Store, Spec, Store).
 
 
 %  get_old_pred_ref(+Spec, +Store0, -Ref)
@@ -122,14 +108,7 @@ get_pred_ref(Spec, Store0, N, Store) :-
 %  This differs from get_pred_ref/4 in that no new pred number will be
 %  allocated.
 
-get_old_pred_ref(Spec, Store, Ref) :-
-	Store = store(_,Map,_),
-	(   ground(Spec) ->
-		map_fetch(Spec, Map, Ref)
-	;   integer(Ref) ->
-		get_pred_spec(Ref, Store, Spec)
-	;   map_member(Map, Spec, Ref)		% backtrack over whole store
-	).
+get_old_pred_ref(Spec, _Store, Spec).
 
 
 %  put_pred_alias(+Oldpred, +Alias, +Store0, -Store)
@@ -137,11 +116,10 @@ get_old_pred_ref(Spec, Store, Ref) :-
 %  a predicate spec, as an alias for predicate Oldpred.
 
 put_pred_alias(Oldpred, Alias, Store0, Store) :-
-	get_old_pred_ref(Oldpred, Store0, Ref),
-	\+ get_old_pred_ref(Alias, Store0, _),
-	Store0 = store(N,Map0,Array),
-	Store = store(N,Map,Array),
-	map_store(Alias, Ref, Map0, Map).
+        (   map_search(Store0, Oldpred, alias(Older)) ->
+            put_pred_alias(Older, Alias, Store0, Store)
+        ;   map_store(Alias, alias(Oldpred), Store0, Store)
+        ).
 
 
 /*****************************************************************
@@ -160,41 +138,47 @@ The data we store for each predicate are:
     call	The predicate's call patterns.
     prep	The predicate's analysis preparation.  See 'prep.pl' for a
 		description.
-    spec	The predicate's Module:Name/Arity specification.
 --description
 *****************************************************************/
 
+
+%  initial_pred_info(-PredInfo)
+%  PredInfo is the initial pred info when we don't know anything about a pred.
+initial_pred_info(pred([], 0, unprocessed, Bot, Bot, unprepared)) :-
+        anz_bottom(Bot).
 
 %  put_pred_code(+Ref, +Code, +Store0, -Store)
 %  Store is the same as Store0, except that the code of the predicate referred
 %  to by Ref is Code.
 
-put_pred_code(Ref, Code, store(N,Map,Array0), store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(_,B,C,D,E,F,G)),
-	aset(Ref, Array0, pred(Code,B,C,D,E,F,G), Array).
+put_pred_code(Ref, Code, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(_,B,C,D,E,F), pred(Code,B,C,D,E,F),
+                    Store0, Store).
 
 
 %  get_pred_code(+Ref, +Store, -Code)
 %  Code is the code of the predicate referred to by Ref in Store.
 
-get_pred_code(Ref, store(_,_,Array), Code) :-
-	aref(Ref, Array, pred(Code,_,_,_,_,_,_)).
+get_pred_code(Ref, Store, Code) :-
+        map_search(Store, Ref, pred(Code,_,_,_,_,_)).
 
 
 %  put_pred_status(+Ref, +Status, +Store0, -Store)
 %  Store is the same as Store0, except that the status of the predicate
 %  referred to by Ref is Status.
 
-put_pred_status(Ref, Status, store(N,Map,Array0), store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,_,C,D,E,F,G)),
-	aset(Ref, Array0, pred(A,Status,C,D,E,F,G), Array).
+put_pred_status(Ref, Status, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,_,C,D,E,F), pred(A,Status,C,D,E,F),
+                    Store0, Store).
 
 
 %  get_pred_status(+Ref, +Store, -Status)
 %  Status is the status of the predicate referred to by Ref in Store.
 
-get_pred_status(Ref, store(_,_,Array), Status) :-
-	aref(Ref, Array, pred(_,Status,_,_,_,_,_)).
+get_pred_status(Ref, Store, Status) :-
+        map_search(Store, Ref, pred(_,Status,_,_,_,_)).
 
 
 %  property_mask(+Property, -Mask)
@@ -213,10 +197,11 @@ property_mask(discontiguous, 8).
 %  otherwise Store is the same as Store0.
 
 add_pred_property(Ref, Property, Store0, Store) :-
-	get_pred_status(Ref, Store0, Status0),
 	property_mask(Property, Mask),
-	Status is Status0 \/ Mask,
-	put_pred_status(Ref, Status, Store0, Store).
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,Status0,C,D,E,F),
+                    pred(A,Status,C,D,E,F), Store0, Store),
+	Status is Status0 \/ Mask.
 
 
 %  pred_has_property(+Ref, +Property, +Store)
@@ -232,89 +217,87 @@ pred_has_property(Ref, Property, Store) :-
 %  Store is the same as Store0, except that the lowest-numbered predicate
 %  reachable from the predicate referred to by Ref is Travnum.
 
-put_pred_travnum(Ref, Travnum, store(N,Map,Array0), store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,B,_,D,E,F,G)),
-	aset(Ref, Array0, pred(A,B,Travnum,D,E,F,G), Array).
+put_pred_travnum(Ref, Travnum, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,B,_,D,E,F), pred(A,B,Travnum,D,E,F),
+                    Store0, Store).
 
 
 %  get_pred_travnum(+Ref, +Store, -Travnum)
 %  Travnum is the lowest-numbered predicate reachable from the predicate
 %  referred to by Ref in Store.
 
-get_pred_travnum(Ref, store(_,_,Array), Travnum) :-
-	aref(Ref, Array, pred(_,_,Travnum,_,_,_,_)).
+get_pred_travnum(Ref, Store, Travnum) :-
+        map_search(Store, Ref, pred(_,_,Travnum,_,_,_)).
 
 
 %  put_pred_success(+Ref, +Success, +Store0, -Store)
 %  Store is the same as Store0, except that the success of the
 %  predicate referred to by Ref is Success.
 
-put_pred_success(Ref, Success, store(N,Map,Array0),
-		store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,B,C,Old,E,F,G)),
-	anz_free_if_unshared(Old, Success),
-	aset(Ref, Array0, pred(A,B,C,Success,E,F,G), Array).
+put_pred_success(Ref, Success, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,B,C,Old,E,F),
+                    pred(A,B,C,Success,E,F), Store0, Store),
+	anz_free_if_unshared(Old, Success).
 
 
 %  get_pred_success(+Ref, +Store, -Success)
 %  Success is the success of the predicate referred to
 %  by Ref in Store.
 
-get_pred_success(Ref, store(_,_,Array), Success) :-
-	aref(Ref, Array, pred(_,_,_,Success,_,_,_)).
+get_pred_success(Ref, Store, Success) :-
+        map_search(Store, Ref, pred(_,_,_,Success,_,_)).
 
 
 %  put_pred_call(+Ref, +Call, +Store0, -Store)
 %  Store is the same as Store0, except that the call of the
 %  predicate referred to by Ref is Call.
 
-put_pred_call(Ref, Call, store(N,Map,Array0),
-		store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,B,C,D,Old,F,G)),
-	anz_free_if_unshared(Old, Call),
-	aset(Ref, Array0, pred(A,B,C,D,Call,F,G), Array).
+put_pred_call(Ref, Call, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,B,C,D,Old,F),
+                    pred(A,B,C,D,Call,F), Store0, Store),
+	anz_free_if_unshared(Old, Call).
 
 
 %  get_pred_call(+Ref, +Store, -Call)
 %  Call is the call of the predicate referred to by Ref
 %  in Store.
 
-get_pred_call(Ref, store(_,_,Array), Call) :-
-	aref(Ref, Array, pred(_,_,_,_,Call,_,_)).
+get_pred_call(Ref, Store, Call) :-
+        map_search(Store, Ref, pred(_,_,_,_,Call,_)).
 
 
 %  put_pred_prep(+Ref, +Prep, +Store0, -Store)
 %  Store is the same as Store0, except that the prep of the
 %  predicate referred to by Ref is Prep.
 
-put_pred_prep(Ref, Prep, store(N,Map,Array0),
-		store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,B,C,D,E,_,G)),
-	aset(Ref, Array0, pred(A,B,C,D,E,Prep,G), Array).
+put_pred_prep(Ref, Prep, Store0, Store) :-
+        initial_pred_info(Info0),
+        map_replace(Ref, Info0, pred(A,B,C,D,E,_), pred(A,B,C,D,E,Prep),
+                    Store0, Store).
 
 
 %  get_pred_prep(+Ref, +Store, -Prep)
 %  Prep is the prep of the predicate referred to by Ref
 %  in Store.
 
-get_pred_prep(Ref, store(_,_,Array), Prep) :-
-	aref(Ref, Array, pred(_,_,_,_,_,Prep,_)).
+get_pred_prep(Ref, Store, Prep) :-
+        map_search(Store, Ref, pred(_,_,_,_,_,Prep)).
 
 
-%  put_pred_code(+Ref, +Code, +Store0, -Store)
+%  put_pred_spec(+Ref, +Spec, +Store0, -Store)
 %  Store is the same as Store0, except that the code of the predicate referred
 %  to by Ref is Code.
 
-put_pred_spec(Ref, Spec, store(N,Map,Array0), store(N,Map,Array)) :-
-	aref(Ref, Array0, pred(A,B,C,D,E,F,_)),
-	aset(Ref, Array0, pred(A,B,C,D,E,F,Spec), Array).
+put_pred_spec(_Ref, _Spec, Store, Store).
 
 
 %  get_pred_spec(+Ref, +Store, -Spec)
 %  Spec is the spec of the predicate referred to by Ref in Store.
 
-get_pred_spec(Ref, store(_,_,Array), Spec) :-
-	aref(Ref, Array, pred(_,_,_,_,_,_,Spec)).
+get_pred_spec(Ref, _Store, Ref).
 
 
 /*****************************************************************
@@ -581,70 +564,19 @@ indent(N) :-
 /*****************************************************************
 			  Printing Predicate Stores
 
-For debugging, we provide portray/1 hook code to print stores.
+For debugging, we provide portray/1 hook code to print pred infos.
 
 *****************************************************************/
 
-print_store(X, Map, Cursor0, Store) :-
-	(   map_next(Cursor0, Map, Pred, Predref, Cursor1) ->
-		print_store_separator(X),
-		print_store_pred(X, Pred, Predref, Store),
-		print_store(X, Map, Cursor1, Store)
-	;   true
-	).
-
-
-print_store_pred(none, _, _, _) :-
-	!.
-print_store_pred(X, Pred, Predref, Store) :-
-	format('~w=~q', [Predref,Pred]),
-	print_store_pred_suffix(X),
-	print_store_pred1(X, Predref, Store).
-
-
-print_store_pred_suffix(none).
-print_store_pred_suffix(short).
-print_store_pred_suffix(full) :-
-	print_store_pred_suffix(code).
-print_store_pred_suffix(groundness) :-
-	format(':  ', []).
-print_store_pred_suffix(code) :-
-	format(' :-~n', []).
-
-
-print_store_prefix(none) :-
-	write('...').
-print_store_prefix(short).
-print_store_prefix(full) :-
-	print_store_prefix(code).
-print_store_prefix(code) :-
-	nl.
-print_store_prefix(groundness) :-
-	nl.
-
-
-print_store_separator(none).
-print_store_separator(short) :-
-	write(', ').
-print_store_separator(full) :-
-	nl.
-print_store_separator(groundness) :-
-	nl.
-print_store_separator(calls) :-
-	nl.
-
-%  unneeded:  print_store_pred1(none, _, _).
-print_store_pred1(short, _, _).
-print_store_pred1(full, Predref, Store) :-
-	print_store_pred1(code, Predref, Store),
+print_store_pred(none, _, _, _).
+print_store_pred(short, _, _, _).
+print_store_pred(full, Code, Success, Call) :-
+	print_store_pred(code, Code, Success, Call),
 	format('    groundness --~n', []),
-	print_store_pred1(groundness, Predref, Store).
-print_store_pred1(code, Predref, Store) :-
-	get_pred_code(Predref, Store, Code),
+	print_store_pred(groundness, Code, Success, Call).
+print_store_pred(code, Code, _, _) :-
 	print_code(Code, 8).
-print_store_pred1(groundness, Predref, Store) :-
-	get_pred_call(Predref, Store, Call),
-	get_pred_success(Predref, Store, Success),
+print_store_pred(groundness, _, Success, Call) :-
 	write('	'),
 	print_boolfn(Call),
 	format(' => ', []),
@@ -653,7 +585,7 @@ print_store_pred1(groundness, Predref, Store) :-
 
 
 print_boolfn(X) :-
-	print(X).
+	anz_print(X).
 
 
 :- dynamic showing_stores/1.
@@ -678,35 +610,30 @@ valid_store_show_state(groundness).
 
 :- multifile user:portray/1.
 
-user:portray(store(N,Map,Array)) :-
-	integer(N),
-	nonvar(Map),
-	nonvar(Array),
+user:portray(pred(Code,_Status,_Travnum,Success,Call,_Prep)) :-
 	!,
-	write('STORE{'),
-	map_first(Map, Cursor0),
 	showing_stores(X),
-	(   map_next(Cursor0, Map, Pred, Predref, Cursor1) ->
-		Store = store(N,Map,Array),
-		print_store_prefix(X),
-		print_store_pred(X, Pred, Predref, Store),
-		print_store(X, Map, Cursor1, Store)
-	;   true
-	),
-	write('}').
+        print_store_pred(X, Code, Success, Call).
 user:portray(conj(L)) :-
+        !,
 	print_goal(conj(L), 8).
 user:portray(disj(L)) :-
+        !,
 	print_goal(disj(L), 8).
 user:portray(if_then_else(G1,G2,G3)) :-
+        !,
 	print_goal(if_then_else(G1,G2,G3), 8).
 user:portray(equal(A,B,C,D,E)) :-
-	print_goal(equal(A,B,C,D,E), 8).
+        !,	
+        print_goal(equal(A,B,C,D,E), 8).
 user:portray(eval(A,B,C,D,E)) :-
+        !,
 	print_goal(eval(A,B,C,D,E), 8).
 user:portray(builtin(A,B,C)) :-
+        !,
 	print_goal(builtin(A,B,C), 8).
 user:portray(call(A,B,C,D)) :-
+        !,
 	print_goal(call(A,B,C,D), 8).
 
 

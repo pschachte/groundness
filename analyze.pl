@@ -114,10 +114,8 @@ more readable.
 :- ensure_loaded(scc).
 :- ensure_loaded(bottomup).
 :- ensure_loaded(topdown).
-%  :- ensure_loaded(boolfn).
 :- ensure_loaded(predstore).
 :- ensure_loaded(analysis).
-:- ensure_loaded(millitime).
 :- ensure_loaded(misc).
 :- ensure_loaded(library(charsio)).
 
@@ -237,11 +235,11 @@ getopt(goal,	options(_P, _S, G, _T, _D), G).
 getopt(times,	options(_P, _S, _G, T, _D), T).
 getopt(topdown,	options(_P, _S, _G, _T, D), D).
 getopt(gc,	_, State) :-
-	prolog_flag(gc, State).
+	current_prolog_flag(gc, State).
 getopt(gctrace,	_, State) :-
-	prolog_flag(gc_trace, State).
+	current_prolog_flag(trace_gc, State).
 getopt(charex,	_, State) :-
-	prolog_flag(character_escapes, State).
+	current_prolog_flag(character_escapes, State).
 
 %  setopt(+Optname, +Options0, +Newvalue, -Options)
 %  Newvalue is the value of option Optname in options term Options; all other
@@ -253,12 +251,12 @@ setopt(goal,	options(P, S, _, T, D), G, options(P, S, G, T, D)).
 setopt(times,	options(P, S, G, _, D), T, options(P, S, G, T, D)).
 setopt(topdown,	options(P, S, G, T, _), D, options(P, S, G, T, D)).
 setopt(gc,	Opt, State, Opt) :-
-	prolog_flag(gc, _, State).
+	set_prolog_flag(gc, State).
 setopt(gctrace,	Opt, State, Opt) :-
-	prolog_flag(gc, _, State),
-	prolog_flag(gc_trace, _, State).
+	set_prolog_flag(gc, State),
+	set_prolog_flag(trace_gc, State).
 setopt(charex,	Opt, State, Opt) :-
-	prolog_flag(character_escapes, _, State).
+	set_prolog_flag(character_escapes, State).
 
 
 %  default_opt(-Options)

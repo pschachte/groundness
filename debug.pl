@@ -3,7 +3,7 @@
 %  Author   : Peter Schachte
 %  Origin   : Thu Oct  8 07:36:43 1998
 %  Purpose  : Make debugging the analyzer easier
-%  Copyright: © 1998 Peter Schachte.  All rights reserved.
+%  Copyright: (c) 1998 Peter Schachte.  All rights reserved.
 %
 
 :- module(debug, [ print_bryant/1, print_bryant/2 ]).

@@ -20,7 +20,6 @@
 :- use_module(predstore).
 %  :- use_module(calls).				% for simplify_goal/7
 :- use_module(prep).
-:- use_module(library(basics)).
 
 
 

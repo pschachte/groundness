@@ -21,7 +21,6 @@
 	prepare_code/5
    ]).
 
-:- use_module(library(basics)).
 :- use_module(predstore).
 :- use_module(analysis).
 :- use_module(misc).
@@ -85,7 +84,7 @@ away.
 %  scc.
 
 prepare_scc(SCC, Preds0, Preds) :-
-	prepare_scc(SCC, Preds0, Preds, SCC).
+        prepare_scc(SCC, Preds0, Preds, SCC).
 
 prepare_scc([], Preds, Preds, _).
 prepare_scc([Ref|Refs], Preds0, Preds, SCC) :-

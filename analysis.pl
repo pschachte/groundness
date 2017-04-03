@@ -32,7 +32,8 @@
 	analyze_call/5,
 	analyze_call_pattern/3,
 	analyze_foreign/2,
-	builtin_analysis/2
+        builtin_analysis/2,
+        milli_time/1
    ]).
 
 
@@ -148,7 +149,7 @@ anz_project(Analysis0, Projection, Analysis) :-
 %  variables numbered strictly lower than Projection.
 
 analyze_unif(Var, _Term, Vars, Projection, Analysis0, Analysis) :-
-	bool_abstract_unify(Analysis0, Var, Vars, Projection, Analysis).
+	abstract_unify_list(Analysis0, Var, Vars, Projection, Analysis).
 
 % 	anz_iffconj(Var, Vars, Analysis1),
 % 	bool_meet_projected(Analysis0, Analysis1, Projection, Analysis).
