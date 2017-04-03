@@ -3,8 +3,10 @@ An efficient groundness analyser for Prolog
 
 Copyright 1998-2017 Peter Schachte
 
-Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
-You may not use this code except in compliance with the License.
+Licensed under the
+[Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+(the "License"); you may not use this code except in compliance with
+the License.
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
