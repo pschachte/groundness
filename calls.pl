@@ -191,14 +191,12 @@ file_contents(F, Rel, [File], Files0, Files, Mods0, Mods, Preds0, Preds,
 		MV = MV0,
 		TV = TV0,
 		seen_file_contents(FMods, File, Files0, Files)
-	;   seeing(Oldfile),
-	    see(File),
-	    map_store(File, loading, Files0, Files1),
-	    process_stream(File, user, Files1, Files2, Mods0, Mods, Preds0,
-			 Preds, MV0, MV, TV0, TV, none, _, FileMods),
-	    map_store(File, FileMods, Files2, Files),
-	    seen,
-	    see(Oldfile)
+	;   open(File, read, Stream),
+            map_store(File, loading, Files0, Files1),
+	    process_stream(File, Stream, user, Files1, Files2, Mods0, Mods,
+                           Preds0, Preds, MV0, MV, TV0, TV, none, _, FileMods),
+            close(Stream),
+	    map_store(File, FileMods, Files2, Files)
 	).
 
 
@@ -215,36 +213,36 @@ seen_file_contents(loading, File, _Files0, _Files) :-
 seen_file_contents(_, _, Files, Files).
 
 
-%  process_stream(+File, +Defmod, +Files0, -Files, +Mods0, -Mods,
+%  process_stream(+File, +Stream, +Defmod, +Files0, -Files, +Mods0, -Mods,
 %		+Preds0, -Preds, +Maxvars0, -Maxvars, +Totvars0, -Totvars,
 %		+Prevpred, -Clauses, -FileMods)
 %  Defmod is the current default module.  File is the file we are currently
-%  reading.  Other arguments are as above.
+%  reading from stream Stream.  Other arguments are as above.
 
-process_stream(File, Defmod, Files0, Files, Mods0, Mods, Preds0, Preds,
+process_stream(File, Stream, Defmod, Files0, Files, Mods0, Mods, Preds0, Preds,
 		MV0, MV, TV0, TV, Prevpred, Clauses, Fmods) :-
-	read(Clause0),
+	read(Stream, Clause0),
 	expand_term(Clause0, Clause),
 	(   var(Clause) ->
 		write('Warning:  unbound clause in '),
 		write(File),
 		nl,
-		process_stream(File, Defmod, Files0, Files, Mods0, Mods,
+		process_stream(File, Stream, Defmod, Files0, Files, Mods0, Mods,
 			     Preds0, Preds, MV0, MV, TV0, TV, Prevpred,
 			     Clauses, Fmods)
-	;   process_term(Clause, File, Defmod, Files0, Files, Mods0,
+	;   process_term(Clause, File, Stream, Defmod, Files0, Files, Mods0,
 			 Mods, Preds0, Preds, MV0, MV, TV0, TV, Prevpred,
 			 Clauses, Fmods)
 	).
 
 
-%  process_term(+Clause, +File, +Defmod, +Files0, -Files, +Mods0,
+%  process_term(+Clause, +File, +Stream, +Defmod, +Files0, -Files, +Mods0,
 %		  -Mods, +Preds0, -Preds, +Maxvars0, -Maxvars,
 %		  +Totvars0, -Totvars, +Prevpred, -Clauses, -FileMods)
 %  Same as process_stream, except that Clause is the clause that has just been
 %  read.
 
-process_term(end_of_file, _, _, Files0, Files, Mods0, Mods, Preds0, Preds,
+process_term(end_of_file, _, _, _, Files0, Files, Mods0, Mods, Preds0, Preds,
 		MV0, MV, TV0, TV, _, Clauses, Fmods) :-
 	!,
 	Files = Files0,
@@ -254,27 +252,28 @@ process_term(end_of_file, _, _, Files0, Files, Mods0, Mods, Preds0, Preds,
 	TV = TV0,
 	Clauses = [],
 	Fmods = [].
-process_term((:- Directive), File, Defmod, Files0, Files, Mods0, Mods, Preds0,
-	     Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods) :-
+process_term((:- Directive), File, Stream, Defmod, Files0, Files, Mods0, Mods,
+             Preds0, Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods) :-
 	!,
 	process_directive(Directive, File, Defmod, Defmod1, Files0, Files1,
 			  Mods0, Mods1, Preds0, Preds1, MV0, MV1, TV0, TV1,
 			  Fmods, Fmods1),
-	process_stream(File, Defmod1, Files1, Files, Mods1, Mods, Preds1,
-		       Preds, MV1, MV, TV1, TV, Prevpred, Clauses, Fmods1).
-process_term(foreign(_,_,Spec), File, Defmod, Files0, Files, Mods0, Mods,
+	process_stream(File, Stream, Defmod1, Files1, Files, Mods1, Mods,
+                       Preds1, Preds, MV1, MV, TV1, TV, Prevpred, Clauses,
+                       Fmods1).
+process_term(foreign(_,_,Spec), File, Stream, Defmod, Files0, Files, Mods0, Mods,
 		Preds0, Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods) :-
 	!,
 	process_foreign_decl(Spec, Defmod, Preds0, Preds1),
-	process_stream(File, Defmod, Files0, Files, Mods0, Mods, Preds1,
+	process_stream(File, Stream, Defmod, Files0, Files, Mods0, Mods, Preds1,
 		       Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods).
-process_term(foreign(_,Spec), File, Defmod, Files0, Files, Mods0, Mods,
+process_term(foreign(_,Spec), File, Stream, Defmod, Files0, Files, Mods0, Mods,
 		Preds0, Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods) :-
 	!,
 	process_foreign_decl(Spec, Defmod, Preds0, Preds1),
-	process_stream(File, Defmod, Files0, Files, Mods0, Mods, Preds1,
+	process_stream(File, Stream, Defmod, Files0, Files, Mods0, Mods, Preds1,
 		       Preds, MV0, MV, TV0, TV, Prevpred, Clauses, Fmods).
-process_term(Clause, File, Defmod, Files0, Files, Mods0, Mods, Preds0, Preds,
+process_term(Clause, File, Stream, Defmod, Files0, Files, Mods0, Mods, Preds0, Preds,
 		MV0, MV, TV0, TV, Prevpred, PrevClauses, Fmods):-
 	simplify_clause(Clause, Defmod, Preds0, Preds1, Predspec, V, Simple),
 	check_var_limit(V, Predspec),
@@ -296,7 +295,7 @@ process_term(Clause, File, Defmod, Files0, Files, Mods0, Mods, Preds0, Preds,
 						% add new clauses after old
 		put_pred_code(Predref, disj(Clauses), Preds2, Preds3)
 	),
-	process_stream(File, Defmod, Files0, Files, Mods0, Mods, Preds3,
+	process_stream(File, Stream, Defmod, Files0, Files, Mods0, Mods, Preds3,
 		       Preds, MV1, MV, TV1, TV, Predspec, Simples, Fmods).
 
 
