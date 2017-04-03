@@ -1,6 +1,20 @@
 # groundness
 An efficient groundness analyser for Prolog
 
+Copyright 1998 Peter Schachte
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 This is the groundness analyser described in the paper:
 
 Tania Armstrong, Kim Marriott, Peter Schachte, and Harald Søndergaard. [Two classes of Boolean functions for dependency analysis.](http://people.eng.unimelb.edu.au/schachte/papers/scp98.pdf) Science of Computer Programming, 31(1):3–45, May 1998.
