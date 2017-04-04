@@ -91,14 +91,14 @@ anz_free_if_unshared(_, _).  % no-op for robdds
 %  Analysis0 will not affect Analysis.  For representations which to not
 %  use destructive update, this can be the same as Analysis = Analysis0.
 
-anz_copy(X, X).
+anz_copy(X, X).  % no need to copy robdds
 
 
 %  anz_equiv(+Analysis1, +Analysis2)
 %  Analysis1 is identical to Analysis2.  For strongly canonical
 %  representations, this is the same as Analysis1 = Analysis2.
 
-anz_equiv(F, F).
+anz_equiv(F, F).  % semantic equality entails pointer equality for robdds
 
 
 %  anz_top(-Top)
