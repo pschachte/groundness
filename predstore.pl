@@ -158,7 +158,7 @@ The data we store for each predicate are:
 
 %  initial_pred_info(-PredInfo)
 %  PredInfo is the initial pred info when we don't know anything about a pred.
-initial_pred_info(pred([], 0, unprocessed, Bot, Bot, Unprepared)) :-
+initial_pred_info(pred([], 0, unprocessed, Bot, Bot, unprepared)) :-
         anz_bottom(Bot).
 
 
@@ -176,7 +176,8 @@ put_pred_code(Ref, Code, Store0, Store) :-
 %  Code is the code of the predicate referred to by Ref in Store.
 
 get_pred_code(Ref, Store, Code) :-
-        (   map_search(Store, Ref, pred(Code,_,_,_,_,_)) -> true
+        (   map_search(Store, Ref, pred(Code0,_,_,_,_,_)) ->
+            Code = Code0
         ;   Code = undefined
         ).
 
@@ -195,7 +196,8 @@ put_pred_status(Ref, Status, Store0, Store) :-
 %  Status is the status of the predicate referred to by Ref in Store.
 
 get_pred_status(Ref, Store, Status) :-
-        (   map_search(Store, Ref, pred(_,Status,_,_,_,_)) -> true
+        (   map_search(Store, Ref, pred(_,Status0,_,_,_,_)) ->
+            Status = Status0
         ;   Status = 0
         ).
 
@@ -247,7 +249,8 @@ put_pred_travnum(Ref, Travnum, Store0, Store) :-
 %  referred to by Ref in Store.
 
 get_pred_travnum(Ref, Store, Travnum) :-
-        (   map_search(Store, Ref, pred(_,_,Travnum,_,_,_)) -> true
+        (   map_search(Store, Ref, pred(_,_,Travnum0,_,_,_)) ->
+            Travnum = Travnum0
         ;   Travnum = -1
         ).
 
@@ -268,7 +271,8 @@ put_pred_success(Ref, Success, Store0, Store) :-
 %  by Ref in Store.
 
 get_pred_success(Ref, Store, Success) :-
-        (   map_search(Store, Ref, pred(_,_,_,Success,_,_)) -> true
+        (   map_search(Store, Ref, pred(_,_,_,Success0,_,_)) ->
+            Success = Success0
         ;   anz_bottom(Success)
         ).
 
@@ -289,7 +293,8 @@ put_pred_call(Ref, Call, Store0, Store) :-
 %  in Store.
 
 get_pred_call(Ref, Store, Call) :-
-        (   map_search(Store, Ref, pred(_,_,_,_,Call,_)) -> true
+        (   map_search(Store, Ref, pred(_,_,_,_,Call0,_)) ->
+            Call = Call0
         ;   anz_bottom(Call)
         ).
 
@@ -309,7 +314,8 @@ put_pred_prep(Ref, Prep, Store0, Store) :-
 %  in Store.
 
 get_pred_prep(Ref, Store, Prep) :-
-        (   map_search(Store, Ref, pred(_,_,_,_,_,Prep)) -> true
+        (   map_search(Store, Ref, pred(_,_,_,_,_,Prep0)) ->
+            Prep = Prep0
         ;   Prep = unprepared
         ).
 
