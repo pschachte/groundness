@@ -247,7 +247,7 @@ analyze_disj([Prep|Preps], R, Context, Anal0, Anal, Preds0, Preds, Ch0, Ch) :-
 	(   Preps == [] ->
 		Preds = Preds1,
 		Ch = Ch1,
-		anz_join(Anal0, Anal1, R, Anal)
+		anz_join(R, Anal0, Anal1, Anal)
 	;   anz_join(Anal0, Anal1, Anal2),
 	    analyze_disj(Preps, R, Context, Anal2, Anal, Preds1, Preds, Ch1,
 			 Ch)

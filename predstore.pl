@@ -122,7 +122,8 @@ get_pred_ref(Spec, Store, Spec, Store).
 %  This differs from get_pred_ref/4 in that no new pred number will be
 %  allocated.
 
-get_old_pred_ref(Spec, _Store, Spec).
+get_old_pred_ref(Spec, Store, Spec) :-
+        map_member(Store, Spec, _).
 
 
 %  put_pred_alias(+Oldpred, +Alias, +Store0, -Store)

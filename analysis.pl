@@ -137,7 +137,7 @@ anz_equiv(F, F).  % semantic equality entails pointer equality for robdds
 
 %  ** implemented in C **
 
-anz_join(Analysis1, Analysis2, Projection, Analysis) :-
+anz_join(Projection, Analysis1, Analysis2, Analysis) :-
 	anz_join(Analysis1, Analysis2, Analysis3),
 	project_threshold(Projection, Analysis3, Analysis).
 
