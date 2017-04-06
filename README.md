@@ -73,7 +73,7 @@ This means that when `append/2` succeeds, either all three arguments are
 ground, or the first argument is ground and the others are not
 (necessarily) ground, or the first and third are not (necessarily) ground,
 whether the second is ground or not.  This is equivalent to the more
-succinct statement (1 &and; 2) &harr; 3, which you can verify with
+succinct statement (1 &and; 2) &Harr; 3, which you can verify with
 a truth table.
 
 ## Known bugs
