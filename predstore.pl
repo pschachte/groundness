@@ -619,7 +619,7 @@ print_store_pred(groundness, _, Success, Call) :-
 
 
 print_boolfn(X) :-
-	anz_print(X).
+	anz_print_stderr(X).
 
 
 :- dynamic showing_stores/1.

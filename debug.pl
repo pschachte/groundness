@@ -29,7 +29,7 @@ user:portray(X) :-
         ( X > 65536 ; X < -65536),              % assume any number > 64K and
         0 =:= X /\ 3,                           % divisible by 4 is a boolfn
         !,
-        anz_print(X).
+        anz_print_stderr(X).
 
 
 print_bryant(X) :-

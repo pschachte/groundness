@@ -40,6 +40,7 @@
 	anz_project/3,
 	anz_iffconj/3,
 	anz_print/1,
+	anz_print_stderr/1,
 	analyze_unif/6,
 	analyze_eval/6,
 	analyze_builtin/4,
@@ -151,7 +152,13 @@ anz_project(Analysis0, Projection, Analysis) :-
 	
 
 %  anz_print(+Analysis)
-%  Print out Analysis in some suitable format.
+%  Print out Analysis in some suitable format to stdout.
+
+%  ** implemented in C **
+
+
+%  anz_print_stderr(+Analysis)
+%  Print out Analysis in some suitable format to stderr.
 
 %  ** implemented in C **
 
@@ -217,6 +224,10 @@ analyze_builtin(Call, Projection, Analysis0, Analysis) :-
 
 analyze_call_pattern(Call, Analysis, Callpat) :-
 	reverse_rename_term(Analysis, Call, Callpat).
+
+
+milli_time(Time) :-
+        Time is integer(cputime * 1000).
 
 
 %  analyze_foreign(+Foreignspec, -Analysis)
