@@ -1,3 +1,5 @@
 swi_robdd.dylib
 *~
 Makefile.SWI
+*.o
+*.so
