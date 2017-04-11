@@ -7,6 +7,9 @@
 
 include Makefile.SWI
 
+# The command to run SWI Prolog
+SWIPL=swipl
+
 SOLIBS=-L $(SWIDIR)/lib/x86_64-darwin16.4.0 -lswipl
 
 COMMONOS=bryant.o
@@ -56,7 +59,7 @@ swi_bryantPrint.o:	bryantPrint.c bryant.h
 	$(CC) -c -I $(SWIDIR)/include $(SOOPTS) -o $@ bryantPrint.c
 
 Makefile.SWI:
-	swipl -q -g 'file_search_path(swi,Dir), \
+	$(SWIPL) -q -g 'file_search_path(swi,Dir), \
 		     current_prolog_flag(shared_object_extension,So), \
 		     format("SWIDIR=~w~n", [Dir]), \
 		     format("SHAREDEXT=~w~n", [So]), \
