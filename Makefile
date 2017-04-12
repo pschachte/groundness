@@ -12,9 +12,8 @@ SWIPL=swipl
 
 SOLIBS=-L $(SWIDIR)/lib/x86_64-darwin16.4.0 -lswipl
 
-COMMONOS=bryant.o
-SOOS=$(COMMONOS) swi_robdd.o swi_bryantPrint.o
-OS=$(COMMONOS) bryantPrint.o 
+SOOS=swi_robdd.o swi_bryant.o swi_bryantPrint.o
+OS=bryant.o bryantPrint.o 
 SO=swi_robdd.$(SHAREDEXT)
 RELFILES=bryant.c bryant.h bryantPrint.c var.h Makefile
 GENFILES=$(TESTOS) $(OS) $(SOOS)
@@ -57,6 +56,9 @@ swi_robdd.o:	swi_robdd.c bryant.h
 
 swi_bryantPrint.o:	bryantPrint.c bryant.h
 	$(CC) -c -I $(SWIDIR)/include $(SOOPTS) -o $@ bryantPrint.c
+
+swi_bryant.o:	bryant.c bryant.h
+	$(CC) -c -I $(SWIDIR)/include $(SOOPTS) -o $@ bryant.c
 
 Makefile.SWI:
 	$(SWIPL) -q -g 'file_search_path(swi,Dir), \
