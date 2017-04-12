@@ -28,7 +28,7 @@ BASECFLAGS     = -Wall -Wshadow -Wcast-qual -Wcast-align -Wpointer-arith \
                  -Wstrict-prototypes -Wmissing-declarations -Winline \
                  -pedantic
 LIBS=
-SOOPTS=-fpic -DSWI
+SOOPTS=-fpic -fPIC -DSWI
 
 
 # General options
@@ -61,11 +61,7 @@ swi_bryant.o:	bryant.c bryant.h
 	$(CC) -c -I $(SWIDIR)/include $(SOOPTS) -o $@ bryant.c
 
 Makefile.SWI:
-	$(SWIPL) -q -g 'file_search_path(swi,Dir), \
-		     current_prolog_flag(shared_object_extension,So), \
-		     format("SWIDIR=~w~n", [Dir]), \
-		     format("SHAREDEXT=~w~n", [So]), \
-		     halt.' > $@
+	$(SWIPL) -q -g 'file_search_path(swi,Dir), current_prolog_flag(shared_object_extension,So), format("SWIDIR=~w~n", [Dir]), format("SHAREDEXT=~w~n", [So]), halt.' > $@
 
 $(SO): $(SOOS)
 	gcc -shared -o $@ $(CFLAGS) $(SOOPTS) $(SOLIBS) $(SOOS)
