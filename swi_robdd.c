@@ -346,7 +346,7 @@ install_swi_robdd() {
   PL_register_foreign("anz_bottom", 1, pl_bdd_false, 0);
   PL_register_foreign("anz_meet", 3, pl_bdd_and, 0);
   PL_register_foreign("anz_join", 3, pl_bdd_or, 0);
-  PL_register_foreign("implies", 3, pl_bdd_implies, 0);
+  PL_register_foreign("anz_implies", 3, pl_bdd_implies, 0);
   /* PL_register_foreign("bdd_ite", 4, pl_bdd_ite, 0); */
   PL_register_foreign("project_threshold", 3, pl_bdd_project, 0);
   PL_register_foreign("anz_meet", 4, pl_bdd_projected_and, 0);

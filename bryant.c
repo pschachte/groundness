@@ -737,8 +737,8 @@ __inline int next_element(bitset *set, int *var, int *word, bitmask *mask)
 	vr = wd<<LOG_BITS_PER_WORD;
 	/* I know there's a later bit set in bits, so this is safe */
 	while ((bits & CHAR_MASK) == 0) {
-	    bits >>= BITS_PER_CHAR;
-	    vr += BITS_PER_CHAR;
+	    bits >>= CHAR_BIT;
+	    vr += CHAR_BIT;
 	    assert(vr < (wd+1)<<LOG_BITS_PER_WORD);
 	}
 	vr += first_one_bit[bits & CHAR_MASK];
@@ -798,10 +798,10 @@ __inline int prev_element(bitset *set, int *var, int *word, bitmask *mask)
 	    bits = *--ptr;
 	}
 
-	vr = BITS_PER_WORD - BITS_PER_CHAR;
+	vr = BITS_PER_WORD - CHAR_BIT;
 	/* I know there's an earlier bit set in bits, so this is safe */
 	while ((temp=((bits>>vr)&CHAR_MASK)) == 0) {
-	    vr -= BITS_PER_CHAR;
+	    vr -= CHAR_BIT;
 	    assert(vr >= 0);
 	}
 	vr += (int)last_one_bit[(int)temp];

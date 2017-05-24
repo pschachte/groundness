@@ -13,6 +13,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <limits.h>
 #include "var.h"
 
 /*****************************************************************
@@ -34,8 +35,7 @@
 #define LOG_BITS_PER_WORD 5
 
 /* number of bits in an unsigned char, and a bitmask the size of a char */
-#define BITS_PER_CHAR 8
-#define CHAR_MASK ((1<<BITS_PER_CHAR)-1)
+#define CHAR_MASK ((1<<CHAR_BIT)-1)
 
 #define INTCAST(p) ((size_t)(p))
 

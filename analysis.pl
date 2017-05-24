@@ -39,6 +39,7 @@
 	anz_meet_vars/2,
 	anz_project/3,
 	anz_iffconj/3,
+        anz_implies/3,
 	anz_print/1,
 	anz_print_stderr/1,
 	analyze_unif/6,
@@ -150,6 +151,16 @@ anz_join(Projection, Analysis1, Analysis2, Analysis) :-
 anz_project(Analysis0, Projection, Analysis) :-
 	project_threshold(Projection, Analysis0, Analysis).
 	
+
+%  anz_implies(+Analysis1, +Analysis2, -Analysis3)
+%  Analysis3 is the Boolean function Analysis1 -> Analysis2.  If Analysis1
+%  *does* imply Analysis2, Analysis3 will be true, that is
+%        anz_implies(Analysis1, Analysis2, Result),
+%        anz_top(Result)
+%  would succeed.
+
+%  ** implemented in C **
+
 
 %  anz_print(+Analysis)
 %  Print out Analysis in some suitable format to stdout.
@@ -351,7 +362,7 @@ builtin_analysis(functor(_,B,C), X) :-		% B & C
 builtin_analysis(arg(A,B,C), X) :-		% A & (B -> C)
 	variable_rep(B, Vb),
 	variable_rep(C, Vc),
-	implies(Vb, Vc, Imp),
+	anz_implies(Vb, Vc, Imp),
 	anz_free(Vc),
 	variable_rep(A, Va),
 	anz_meet(Imp, Va, X),
@@ -369,7 +380,7 @@ builtin_analysis(hash_term(A,B), X) :-		% A & B (error when var(A))
 builtin_analysis(subsumes_chk(A,B), X) :-	% A -> B
 	variable_rep(A, Va),
 	variable_rep(B, Vb),
-	implies(Va, Vb, X),
+	anz_implies(Va, Vb, X),
 	anz_free(Vb).
 builtin_analysis(copy_term(_,_), T) :-		% No info (can't say A<->B)
 	anz_top(T).
